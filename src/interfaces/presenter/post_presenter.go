@@ -2,6 +2,7 @@ package presenter
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
@@ -9,6 +10,8 @@ import (
 )
 
 type PostPresenter struct{}
+
+var location *time.Location
 
 func (*PostPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, error) {
 	id := strconv.FormatInt(p.Id, 10)
@@ -21,7 +24,8 @@ func (*PostPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, er
 	if err != nil {
 		return nil, err
 	}
-
+	updatedAt = updatedAt.In(location)
+	createdAt = createdAt.In(location)
 	return &graphql.Post{
 		ID:        id,
 		Title:     p.Title,
@@ -41,4 +45,8 @@ func (p *PostPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*
 		list[i] = post
 	}
 	return list, nil
+}
+
+func init() {
+	location = time.Now().Location()
 }
