@@ -11,4 +11,5 @@ type PostRepository interface {
 	Create(ctx context.Context, req *post_grpc.CreateReq) (*post_grpc.Post, error)
 	GetList(ctx context.Context, req *post_grpc.ListReq) (*post_grpc.ListPost, error)
 	Update(ctx context.Context, req *post_grpc.UpdateReq) (*post_grpc.Post, error)
+	Delete(ctx context.Context, req *post_grpc.DeleteReq) (*post_grpc.DeleteRes, error)
 }

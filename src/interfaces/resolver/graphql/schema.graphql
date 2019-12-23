@@ -33,5 +33,5 @@ type Query {
 type Mutation {
   createPost(in: CreatePostInput!): Post!
   updatePost(in: UpdatePostInput!): Post!
-# #   deletePost(id: ID!): Boolean!
+  deletePost(id: ID!): Boolean!
 }

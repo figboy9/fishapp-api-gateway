@@ -21,6 +21,11 @@ func (p *PostRepository) GetList(ctx context.Context, listReq *post_grpc.ListReq
 func (p *PostRepository) Create(ctx context.Context, createReq *post_grpc.CreateReq) (*post_grpc.Post, error) {
 	return p.Client.Create(ctx, createReq)
 }
+
 func (p *PostRepository) Update(ctx context.Context, req *post_grpc.UpdateReq) (*post_grpc.Post, error) {
 	return p.Client.Update(ctx, req)
+}
+
+func (p *PostRepository)Delete(ctx context.Context, req *post_grpc.DeleteReq) (*post_grpc.DeleteRes, error) {
+	return p.Client.Delete(ctx, req)
 }

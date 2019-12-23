@@ -23,11 +23,11 @@ func getUserIDCtx(ctx context.Context) (int64, error) {
 
 func (r *queryResolver) Post(ctx context.Context, id string) (*graphql.Post, error) {
 	// fmt.Println("始まり")
-	n, err := strconv.ParseInt(id, 10, 64)
+	intID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	return r.PostInteractor.Post(ctx, &post_grpc.ID{Id: n})
+	return r.PostInteractor.Post(ctx, &post_grpc.ID{Id: intID})
 }
 
 func (r *queryResolver) Posts(ctx context.Context, in *gen.GetPostListInput) ([]*graphql.Post, error) {
@@ -47,7 +47,6 @@ func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInpu
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("useridだよ！！", userID)
 	createReq := &post_grpc.CreateReq{
 		Title:   in.Title,
 		Content: in.Content,
@@ -61,12 +60,28 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInpu
 	if err != nil {
 		return nil, err
 	}
-	n, err := strconv.ParseInt(in.ID, 10, 64)
+	intID, err := strconv.ParseInt(in.ID, 10, 64)
 	updateReq := &post_grpc.UpdateReq{
-		Id:      n,
+		Id:      intID,
 		Title:   in.Title,
 		Content: in.Content,
 		UserId:  userID,
 	}
 	return r.PostInteractor.UpdatePost(ctx, updateReq)
+}
+
+func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
+	userID, err := getUserIDCtx(ctx)
+	if err != nil {
+		return false, err
+	}
+	intID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return false, err
+	}
+	deleteReq := &post_grpc.DeleteReq{
+		Id:     intID,
+		UserId: userID,
+	}
+	return r.PostInteractor.DeletePost(ctx, deleteReq)
 }

@@ -21,6 +21,7 @@ type UPostInteractor interface {
 	Posts(ctx context.Context, req *post_grpc.ListReq) ([]*graphql.Post, error)
 	CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error)
 	UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error)
+	DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error)
 }
 
 func (p *PostInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error) {
@@ -61,4 +62,14 @@ func (p *PostInteractor) UpdatePost(ctx context.Context, req *post_grpc.UpdateRe
 		return nil, err
 	}
 	return p.PostPresenter.TransformPostGraphQL(postRPC)
+}
+
+func (p *PostInteractor) DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+	defer cancel()
+	deleteRes, err := p.PostRepository.Delete(ctx, req)
+	if err != nil {
+		return false, err
+	}
+	return deleteRes.Deleted, nil
 }
