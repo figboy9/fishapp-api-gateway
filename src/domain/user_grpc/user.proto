@@ -1,0 +1,63 @@
+syntax = "proto3";
+package user_grpc;
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+
+service UserService {
+  rpc Create(CreateReq) returns (UserWithToken);
+  rpc GetByID(ID) returns (User);
+  rpc Update(UpdateReq) returns (User);
+  rpc Delete(ID) returns (DeleteRes);
+  rpc RefreshIDToken(RefreshToken) returns (TokenPair);
+  rpc Login(LoginReq) returns (UserWithToken);
+}
+
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string password = 4;
+  google.protobuf.Timestamp createdAt = 5;
+  google.protobuf.Timestamp updatedAt = 6;
+}
+
+message CreateReq {
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 10}];
+  string email = 2 [(validate.rules).string.email = true];
+  string password = 3 [(validate.rules).string.pattern = "^[A-Za-z0-9]{6,72}$"]; // 6文字以上72文字以下の英数字
+}
+
+message UpdateReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, max_len: 10}];
+  string email = 3 [(validate.rules).string.email = true];
+  string password = 4 [(validate.rules).string.pattern = "^[A-Za-z0-9]{6,72}$"]; // 6文字以上72文字以下の英数字
+}
+
+message LoginReq {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.pattern = "^[A-Za-z0-9]{6,72}$"]; // 6文字以上72文字以下の英数字
+}
+
+message DeleteRes {
+  bool deleted = 1;
+}
+
+message ID {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+}
+
+message UserWithToken {
+  User user = 1;
+  TokenPair tokenPair = 2;
+}
+
+message RefreshToken {
+  string refreshToken = 1;
+}
+
+message TokenPair{
+  string idToken = 1;
+  string refreshToken = 2;
+}

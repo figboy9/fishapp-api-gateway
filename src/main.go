@@ -14,9 +14,9 @@ import (
 func main() {
 	conf.Readconf()
 	// mux := http.NewServeMux()
-	postClient := infrastructure.NewGrpcClient()
+	postClient, userClient := infrastructure.NewGrpcClient()
 	t := time.Duration(conf.C.Sv.Timeout) * time.Second
-	resolver := registry.NewGraphQLResolver(t, postClient)
+	resolver := registry.NewGraphQLResolver(t, postClient, userClient)
 	srv, playground := infrastructure.NewGraphQLHandler(resolver, middleware.FieldMiddleware)
 	if conf.C.Sv.Debug {
 		http.Handle("/graphql/playground", playground)
