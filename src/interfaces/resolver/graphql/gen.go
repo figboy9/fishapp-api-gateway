@@ -15,3 +15,9 @@ type GetPostListInput struct {
 	Num      int       `json:"num"`
 	Datetime time.Time `json:"datetime"`
 }
+
+type UpdatePostInput struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}

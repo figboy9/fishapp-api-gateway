@@ -19,7 +19,8 @@ type PostInteractor struct {
 type UPostInteractor interface {
 	Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error)
 	Posts(ctx context.Context, req *post_grpc.ListReq) ([]*graphql.Post, error)
-	Create(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error)
+	CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error)
+	UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error)
 }
 
 func (p *PostInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error) {
@@ -29,12 +30,7 @@ func (p *PostInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.P
 	if err != nil {
 		return nil, err
 	}
-
-	post, err := p.PostPresenter.TransformPostGraphQL(postRPC)
-	if err != nil {
-		return nil, err
-	}
-	return post, nil
+	return p.PostPresenter.TransformPostGraphQL(postRPC)
 }
 
 func (p *PostInteractor) Posts(ctx context.Context, listReq *post_grpc.ListReq) ([]*graphql.Post, error) {
@@ -44,23 +40,25 @@ func (p *PostInteractor) Posts(ctx context.Context, listReq *post_grpc.ListReq) 
 	if err != nil {
 		return nil, err
 	}
-	postList, err := p.PostPresenter.TransformListPostGraphQL(listPost.Posts)
-	if err != nil {
-		return nil, err
-	}
-	return postList, nil
+	return p.PostPresenter.TransformListPostGraphQL(listPost.Posts)
 }
 
-func (p *PostInteractor) Create(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error) {
+func (p *PostInteractor) CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error) {
 	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
 	defer cancel()
 	postRPC, err := p.PostRepository.Create(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	post, err := p.PostPresenter.TransformPostGraphQL(postRPC)
+	return p.PostPresenter.TransformPostGraphQL(postRPC)
+}
+
+func (p *PostInteractor) UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+	defer cancel()
+	postRPC, err := p.PostRepository.Update(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return post, nil
+	return p.PostPresenter.TransformPostGraphQL(postRPC)
 }

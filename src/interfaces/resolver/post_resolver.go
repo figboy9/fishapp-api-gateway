@@ -53,5 +53,20 @@ func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInpu
 		Content: in.Content,
 		UserId:  userID,
 	}
-	return r.PostInteractor.Create(ctx, createReq)
+	return r.PostInteractor.CreatePost(ctx, createReq)
+}
+
+func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInput) (*graphql.Post, error) {
+	userID, err := getUserIDCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n, err := strconv.ParseInt(in.ID, 10, 64)
+	updateReq := &post_grpc.UpdateReq{
+		Id:      n,
+		Title:   in.Title,
+		Content: in.Content,
+		UserId:  userID,
+	}
+	return r.PostInteractor.UpdatePost(ctx, updateReq)
 }

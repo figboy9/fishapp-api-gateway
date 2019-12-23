@@ -17,7 +17,7 @@ func FieldMiddleware(ctx context.Context, next graphql.Resolver) (interface{}, e
 	gqlgenCtx := graphql.GetFieldContext(ctx)
 	path := gqlgenCtx.Path()
 	isMethod := gqlgenCtx.IsMethod
-	if path[0] == "createPost" && isMethod {
+	if (path[0] == "createPost" || path[0] == "updatePost") && isMethod {
 		token, err := getTokenCtx(ctx)
 		if err != nil {
 			return nil, err
