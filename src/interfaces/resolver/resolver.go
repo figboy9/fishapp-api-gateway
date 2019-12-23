@@ -20,3 +20,7 @@ func (r *Resolver) Mutation() graphql.MutationResolver {
 type queryResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
+
+type contextKey string
+
+const UserIDCtxKey contextKey = "userID"

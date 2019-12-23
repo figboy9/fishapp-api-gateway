@@ -2,31 +2,32 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/ezio1119/fishapp-api-gateway/conf"
+	"github.com/ezio1119/fishapp-api-gateway/interfaces/resolver"
 )
 
 func FieldMiddleware(ctx context.Context, next graphql.Resolver) (interface{}, error) {
-	// fmt.Printf("\nctxだよ: %#v\n", ctx.Value(reqToken{}))
-	// fmt.Printf("\nFieldMiddleware: %#v\n", graphql.GetFieldContext(ctx).Object)
 	gqlgenCtx := graphql.GetFieldContext(ctx)
 	path := gqlgenCtx.Path()
 	isMethod := gqlgenCtx.IsMethod
-	if path[0] == "createPost" && isMethod {
-		token := ctx.Value(reqToken{}).(string)
+	if (path[0] == "createPost" || path[0] == "updatePost" || path[0] == "deletePost") && isMethod {
+		token, err := getTokenCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
 		userID, err := validateToken(token)
 		if err != nil {
 			return nil, err
 		}
-		ctx = context.WithValue(ctx, "userID", userID)
+		ctx = context.WithValue(ctx, resolver.UserIDCtxKey, userID)
 	}
-	// fmt.Printf("%#v", path.(type))
 
 	return next(ctx)
-
 }
 
 func validateToken(t string) (int64, error) {
@@ -43,4 +44,13 @@ func validateToken(t string) (int64, error) {
 		return 0, err
 	}
 	return userID, nil
+}
+
+func getTokenCtx(ctx context.Context) (string, error) {
+	v := ctx.Value(idTokenCtxKey)
+	token, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("token not found")
+	}
+	return token, nil
 }

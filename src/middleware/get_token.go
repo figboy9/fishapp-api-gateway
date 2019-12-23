@@ -6,9 +6,11 @@ import (
 	"strings"
 )
 
-type reqToken struct{}
+type contextKey string
 
-func GetToken(next http.Handler) http.Handler {
+const idTokenCtxKey contextKey = "id-token"
+
+func GetTokenFromReq(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {
@@ -17,7 +19,7 @@ func GetToken(next http.Handler) http.Handler {
 		}
 		splitToken := strings.Split(token, "Bearer ")
 		token = splitToken[1]
-		ctx := context.WithValue(r.Context(), reqToken{}, token)
+		ctx := context.WithValue(r.Context(), idTokenCtxKey, token)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})

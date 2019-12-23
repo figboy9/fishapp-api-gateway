@@ -14,24 +14,24 @@ input CreatePostInput {
   content: String!
 }
 
-# input UpdatePostInput{
-#   id: ID!
-#   title: String!
-#   content: String!
-# }
+input UpdatePostInput{
+  id: ID!
+  title: String!
+  content: String!
+}
 
-# input GetPostListInput{
-#   num: Int!
-#   datetime: Time!
-# }
+input GetPostListInput{
+  num: Int!
+  datetime: Time!
+}
 
 type Query {
-  # posts(in: GetPostListInput): [Post!]!
+  posts(in: GetPostListInput): [Post!]!
   post(id: ID!): Post!
 }
 
 type Mutation {
   createPost(in: CreatePostInput!): Post!
-# #   updatePost(in: UpdatePostInput!): Post!
-# #   deletePost(id: ID!): Boolean!
+  updatePost(in: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
 }
