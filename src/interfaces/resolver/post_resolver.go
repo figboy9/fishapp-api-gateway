@@ -22,7 +22,6 @@ func getUserIDCtx(ctx context.Context) (int64, error) {
 }
 
 func (r *queryResolver) Post(ctx context.Context, id string) (*graphql.Post, error) {
-	// fmt.Println("始まり")
 	intID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return nil, err

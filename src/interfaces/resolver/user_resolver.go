@@ -2,13 +2,19 @@ package resolver
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
+	"github.com/ezio1119/fishapp-api-gateway/domain/user_grpc"
 	gen "github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
 )
 
 func (r *queryResolver) User(ctx context.Context, id string) (*graphql.User, error) {
-	panic("not implemented")
+	intID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return r.UserInteractor.User(ctx, &user_grpc.ID{Id: intID})
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, in gen.CreateUserInput) (*gen.UserWithToken, error) {

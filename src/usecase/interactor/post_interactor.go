@@ -24,50 +24,50 @@ type UPostInteractor interface {
 	DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error)
 }
 
-func (p *PostInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error) {
-	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+func (i *PostInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	postRPC, err := p.PostRepository.GetByID(ctx, id)
+	postRPC, err := i.PostRepository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return p.PostPresenter.TransformPostGraphQL(postRPC)
+	return i.PostPresenter.TransformPostGraphQL(postRPC)
 }
 
-func (p *PostInteractor) Posts(ctx context.Context, listReq *post_grpc.ListReq) ([]*graphql.Post, error) {
-	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+func (i *PostInteractor) Posts(ctx context.Context, listReq *post_grpc.ListReq) ([]*graphql.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	listPost, err := p.PostRepository.GetList(ctx, listReq)
+	listPost, err := i.PostRepository.GetList(ctx, listReq)
 	if err != nil {
 		return nil, err
 	}
-	return p.PostPresenter.TransformListPostGraphQL(listPost.Posts)
+	return i.PostPresenter.TransformListPostGraphQL(listPost.Posts)
 }
 
-func (p *PostInteractor) CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error) {
-	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+func (i *PostInteractor) CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	postRPC, err := p.PostRepository.Create(ctx, req)
+	postRPC, err := i.PostRepository.Create(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return p.PostPresenter.TransformPostGraphQL(postRPC)
+	return i.PostPresenter.TransformPostGraphQL(postRPC)
 }
 
-func (p *PostInteractor) UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error) {
-	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+func (i *PostInteractor) UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	postRPC, err := p.PostRepository.Update(ctx, req)
+	postRPC, err := i.PostRepository.Update(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return p.PostPresenter.TransformPostGraphQL(postRPC)
+	return i.PostPresenter.TransformPostGraphQL(postRPC)
 }
 
-func (p *PostInteractor) DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, p.ContextTimeout)
+func (i *PostInteractor) DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	deleteRes, err := p.PostRepository.Delete(ctx, req)
+	deleteRes, err := i.PostRepository.Delete(ctx, req)
 	if err != nil {
 		return false, err
 	}
