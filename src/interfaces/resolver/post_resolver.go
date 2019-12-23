@@ -8,6 +8,7 @@ import (
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
 	gen "github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
+	"github.com/golang/protobuf/ptypes"
 )
 
 func getUserIDCtx(ctx context.Context) (int64, error) {
@@ -21,21 +22,24 @@ func getUserIDCtx(ctx context.Context) (int64, error) {
 }
 
 func (r *queryResolver) Post(ctx context.Context, id string) (*graphql.Post, error) {
-	fmt.Println("始まり")
+	// fmt.Println("始まり")
 	n, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	post, err := r.PostInteractor.Post(ctx, &post_grpc.ID{Id: n})
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("終わり")
-	return post, nil
+	return r.PostInteractor.Post(ctx, &post_grpc.ID{Id: n})
 }
 
 func (r *queryResolver) Posts(ctx context.Context, in *gen.GetPostListInput) ([]*graphql.Post, error) {
-	panic("not implemented")
+	datetime, err := ptypes.TimestampProto(in.Datetime)
+	if err != nil {
+		return nil, err
+	}
+	listReq := &post_grpc.ListReq{
+		Datetime: datetime,
+		Num:      int64(in.Num),
+	}
+	return r.PostInteractor.Posts(ctx, listReq)
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInput) (*graphql.Post, error) {
@@ -43,14 +47,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInpu
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("useridだよ！！", userID)
 	createReq := &post_grpc.CreateReq{
 		Title:   in.Title,
 		Content: in.Content,
 		UserId:  userID,
 	}
-	post, err := r.PostInteractor.Create(ctx, createReq)
-	if err != nil {
-		return nil, err
-	}
-	return post, nil
+	return r.PostInteractor.Create(ctx, createReq)
 }

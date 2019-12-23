@@ -31,3 +31,14 @@ func (*PostPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, er
 		UserID:    userID,
 	}, nil
 }
+func (p *PostPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*graphql.Post, error) {
+	list := make([]*graphql.Post, len(listRPC))
+	for i, postRPC := range listRPC {
+		post, err := p.TransformPostGraphQL(postRPC)
+		if err != nil {
+			return nil, err
+		}
+		list[i] = post
+	}
+	return list, nil
+}

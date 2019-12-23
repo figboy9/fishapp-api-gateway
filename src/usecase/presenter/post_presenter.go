@@ -7,4 +7,5 @@ import (
 
 type PostPresenter interface {
 	TransformPostGraphQL(*post_grpc.Post) (*graphql.Post, error)
+	TransformListPostGraphQL([]*post_grpc.Post) ([]*graphql.Post, error)
 }
