@@ -19,5 +19,10 @@ func NewGraphQLResolver(t time.Duration, postClient post_grpc.PostServiceClient)
 			PostPresenter:  &presenter.PostPresenter{},
 			ContextTimeout: t,
 		},
+		UserInteractor: &interactor.UserInteractor{
+			UserRepository: &repository.UserRepository{},
+			UserPresenter:  &presenter.UserPresenter{},
+			ContextTimeout: t,
+		},
 	}
 }
