@@ -8,7 +8,7 @@ service PostService {
   rpc GetByID(ID) returns (Post);
   rpc GetList(ListReq) returns (ListPost);
   rpc Update(UpdateReq) returns (Post);
-  rpc Delete(ID) returns (DeleteRes);
+  rpc Delete(DeleteReq) returns (DeleteRes);
 }
 
 message Post {
@@ -23,17 +23,24 @@ message Post {
 message CreateReq {
   string title = 1 [(validate.rules).string = {min_len: 1, max_len: 20}];
   string content = 2 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  int64 user_id= 3 [(validate.rules).int64.gte = 1];
 }
 
 message UpdateReq  {
   int64 id = 1 [(validate.rules).int64.gte = 1];
   string title = 2 [(validate.rules).string = {min_len: 1, max_len: 20}];
   string content = 3 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  int64 user_id= 4 [(validate.rules).int64.gte = 1];
 }
 
 message ListReq {
   google.protobuf.Timestamp datetime = 1 [(validate.rules).timestamp.required = true];
   int64 num = 2 [(validate.rules).int64 = {gte:1, lte: 30}];
+}
+
+message DeleteReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  int64 user_id= 2 [(validate.rules).int64.gte = 1];
 }
 
 message ID {
