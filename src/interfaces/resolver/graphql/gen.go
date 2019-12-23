@@ -2,7 +2,16 @@
 
 package graphql
 
+import (
+	"time"
+)
+
 type CreatePostInput struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
+}
+
+type GetPostListInput struct {
+	Num      int       `json:"num"`
+	Datetime time.Time `json:"datetime"`
 }

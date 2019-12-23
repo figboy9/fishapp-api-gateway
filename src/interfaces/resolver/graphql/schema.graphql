@@ -20,13 +20,13 @@ input CreatePostInput {
 #   content: String!
 # }
 
-# input GetPostListInput{
-#   num: Int!
-#   datetime: Time!
-# }
+input GetPostListInput{
+  num: Int!
+  datetime: Time!
+}
 
 type Query {
-  # posts(in: GetPostListInput): [Post!]!
+  posts(in: GetPostListInput): [Post!]!
   post(id: ID!): Post!
 }
 
