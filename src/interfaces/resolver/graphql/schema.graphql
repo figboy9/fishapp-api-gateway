@@ -1,5 +1,23 @@
 scalar Time
 
+
+
+type Query {
+  posts(in: GetPostListInput): [Post!]!
+  post(id: ID!): Post!
+  user(id: ID!): User!
+}
+
+type Mutation {
+  createPost(in: CreatePostInput!): Post!
+  updatePost(in: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
+  createUser(in: CreateUserInput!): UserWithToken!
+  updateUser(in: UpdateUserInput!): UserWithToken!
+  deleteUser: Boolean!
+  login(in: LoginInput!): UserWithToken!
+}
+
 type Post {
   id: ID!
   title: String!
@@ -25,13 +43,37 @@ input GetPostListInput{
   datetime: Time!
 }
 
-type Query {
-  posts(in: GetPostListInput): [Post!]!
-  post(id: ID!): Post!
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  created_at: Time!
+  updated_at: Time!
 }
 
-type Mutation {
-  createPost(in: CreatePostInput!): Post!
-  updatePost(in: UpdatePostInput!): Post!
-  deletePost(id: ID!): Boolean!
+type UserWithToken {
+  user: User!
+  tokenPair: TokenPair!
+}
+
+type TokenPair {
+  idToken: String!
+  refreshToken: String!
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+  password: String!
+}
+
+input UpdateUserInput{
+  name: String!
+  email: String!
+  password: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
 }
