@@ -25,10 +25,14 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*graphql.Post, err
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInput) (*graphql.Post, error) {
-	userID := ctx.Value("userID").(int64)
+	userID, err := getUserIDCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
 	createReq := &post_grpc.CreateReq{
 		Title:   in.Title,
 		Content: in.Content,
+		UserId:  userID,
 	}
 	post, err := r.PostInteractor.Create(ctx, createReq)
 	if err != nil {
