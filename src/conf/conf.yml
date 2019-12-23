@@ -1,0 +1,9 @@
+sv:
+  timeout: 2
+  port: 8080
+  debug: true
+grpc:
+  post_url: post:50051
+  user_url: user:50051
+auth:
+  jwtkey: jwtkey

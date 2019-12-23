@@ -1,0 +1,12 @@
+version: '3'
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.fresh
+    volumes:
+      - ./src/.:/app
+    environment:
+      TZ: Asia/Tokyo
+    ports:
+      - "8080:8080"

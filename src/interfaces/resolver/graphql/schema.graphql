@@ -1,0 +1,37 @@
+scalar Time
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  created_at: Time!
+  updated_at: Time!
+  user_id: ID!
+}
+
+input CreatePostInput {
+  title: String!
+  content: String!
+}
+
+# input UpdatePostInput{
+#   id: ID!
+#   title: String!
+#   content: String!
+# }
+
+# input GetPostListInput{
+#   num: Int!
+#   datetime: Time!
+# }
+
+type Query {
+  # posts(in: GetPostListInput): [Post!]!
+  post(id: ID!): Post!
+}
+
+type Mutation {
+  createPost(in: CreatePostInput!): Post!
+# #   updatePost(in: UpdatePostInput!): Post!
+# #   deletePost(id: ID!): Boolean!
+}

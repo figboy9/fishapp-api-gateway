@@ -1,0 +1,49 @@
+syntax = "proto3";
+package post_grpc;
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+service PostService {
+  rpc Create(CreateReq) returns (Post);
+  rpc GetByID(ID) returns (Post);
+  rpc GetList(ListReq) returns (ListPost);
+  rpc Update(UpdateReq) returns (Post);
+  rpc Delete(ID) returns (DeleteRes);
+}
+
+message Post {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  int64 user_id = 6;
+}
+
+message CreateReq {
+  string title = 1 [(validate.rules).string = {min_len: 1, max_len: 20}];
+  string content = 2 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+}
+
+message UpdateReq  {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  string title = 2 [(validate.rules).string = {min_len: 1, max_len: 20}];
+  string content = 3 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+}
+
+message ListReq {
+  google.protobuf.Timestamp datetime = 1 [(validate.rules).timestamp.required = true];
+  int64 num = 2 [(validate.rules).int64 = {gte:1, lte: 30}];
+}
+
+message ID {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+}
+
+message ListPost {
+  repeated Post posts = 1;
+}
+
+message DeleteRes {
+  bool deleted = 1;
+}

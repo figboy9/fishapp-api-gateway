@@ -1,0 +1,16 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+
+schema:
+- schema.graphql
+exec:
+  filename: exec.go
+model:
+  filename: gen.go
+resolver:
+  filename: ../resolver.go
+  type: Resolver
+autobind:
+  - github.com/ezio1119/fishapp-api-gateway/domain/graphql
