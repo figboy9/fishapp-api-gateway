@@ -18,7 +18,12 @@ func (r *queryResolver) User(ctx context.Context, id string) (*graphql.User, err
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, in gen.CreateUserInput) (*gen.UserWithToken, error) {
-	panic("not implemented")
+	createReq := &user_grpc.CreateReq{
+		Name:     in.Name,
+		Email:    in.Email,
+		Password: in.Password,
+	}
+	return r.UserInteractor.CreateUser(ctx, createReq)
 }
 func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInput) (*gen.UserWithToken, error) {
 	panic("not implemented")
