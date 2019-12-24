@@ -23,6 +23,7 @@ type UUserInteractor interface {
 	CreateUser(ctx context.Context, req *user_grpc.CreateReq) (*gen.UserWithToken, error)
 	UpdateUser(ctx context.Context, req *user_grpc.UpdateReq) (*graphql.User, error)
 	DeleteUser(ctx context.Context, req *user_grpc.ID) (bool, error)
+	Login(ctx context.Context, req *user_grpc.LoginReq) (*gen.UserWithToken, error)
 }
 
 func (i *UserInteractor) User(ctx context.Context, id *user_grpc.ID) (*graphql.User, error) {
@@ -63,4 +64,14 @@ func (i *UserInteractor) DeleteUser(ctx context.Context, req *user_grpc.ID) (boo
 		return false, err
 	}
 	return deleteRes.Deleted, nil
+}
+
+func (i *UserInteractor) Login(ctx context.Context, req *user_grpc.LoginReq) (*gen.UserWithToken, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
+	defer cancel()
+	userWithTokenRPC, err := i.UserRepository.Login(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return i.UserPresenter.TransformUserWithTokenGraphQL(userWithTokenRPC)
 }

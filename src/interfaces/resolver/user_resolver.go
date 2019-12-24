@@ -18,12 +18,12 @@ func (r *queryResolver) User(ctx context.Context, id string) (*graphql.User, err
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, in gen.CreateUserInput) (*gen.UserWithToken, error) {
-	createReq := &user_grpc.CreateReq{
+	req := &user_grpc.CreateReq{
 		Name:     in.Name,
 		Email:    in.Email,
 		Password: in.Password,
 	}
-	return r.UserInteractor.CreateUser(ctx, createReq)
+	return r.UserInteractor.CreateUser(ctx, req)
 }
 
 func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInput) (*graphql.User, error) {
@@ -31,13 +31,13 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInpu
 	if err != nil {
 		return nil, err
 	}
-	updateReq := &user_grpc.UpdateReq{
+	req := &user_grpc.UpdateReq{
 		Id:       userID,
 		Name:     in.Name,
 		Email:    in.Email,
 		Password: in.Password,
 	}
-	return r.UserInteractor.UpdateUser(ctx, updateReq)
+	return r.UserInteractor.UpdateUser(ctx, req)
 }
 
 func (r *mutationResolver) DeleteUser(ctx context.Context) (bool, error) {
@@ -48,5 +48,9 @@ func (r *mutationResolver) DeleteUser(ctx context.Context) (bool, error) {
 	return r.UserInteractor.DeleteUser(ctx, &user_grpc.ID{Id: userID})
 }
 func (r *mutationResolver) Login(ctx context.Context, in gen.LoginInput) (*gen.UserWithToken, error) {
-	panic("not implemented")
+	req := &user_grpc.LoginReq{
+		Email:    in.Email,
+		Password: in.Password,
+	}
+	return r.UserInteractor.Login(ctx, req)
 }
