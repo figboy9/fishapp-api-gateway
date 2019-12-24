@@ -4,6 +4,8 @@ package graphql
 
 import (
 	"time"
+
+	graphql1 "github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 )
 
 type CreatePostInput struct {
@@ -11,13 +13,35 @@ type CreatePostInput struct {
 	Content string `json:"content"`
 }
 
+type CreateUserInput struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type GetPostListInput struct {
 	Num      int       `json:"num"`
 	Datetime time.Time `json:"datetime"`
+}
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UpdatePostInput struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+}
+
+type UpdateUserInput struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type UserWithToken struct {
+	User      *graphql1.User      `json:"user"`
+	TokenPair *graphql1.TokenPair `json:"tokenPair"`
 }

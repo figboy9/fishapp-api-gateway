@@ -7,6 +7,7 @@ import (
 
 type Resolver struct {
 	PostInteractor interactor.UPostInteractor
+	UserInteractor interactor.UUserInteractor
 }
 
 func (r *Resolver) Query() graphql.QueryResolver {
