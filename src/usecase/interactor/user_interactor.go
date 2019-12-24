@@ -21,6 +21,7 @@ type UserInteractor struct {
 type UUserInteractor interface {
 	User(ctx context.Context, id *user_grpc.ID) (*graphql.User, error)
 	CreateUser(ctx context.Context, req *user_grpc.CreateReq) (*gen.UserWithToken, error)
+	UpdateUser(ctx context.Context, req *user_grpc.UpdateReq) (*graphql.User, error)
 }
 
 func (i *UserInteractor) User(ctx context.Context, id *user_grpc.ID) (*graphql.User, error) {
@@ -36,9 +37,19 @@ func (i *UserInteractor) User(ctx context.Context, id *user_grpc.ID) (*graphql.U
 func (i *UserInteractor) CreateUser(ctx context.Context, req *user_grpc.CreateReq) (*gen.UserWithToken, error) {
 	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	userWithToken, err := i.UserRepository.Create(ctx, req)
+	userWithTokenRPC, err := i.UserRepository.Create(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return i.UserPresenter.TransformUserWithTokenGraphQL(userWithToken)
+	return i.UserPresenter.TransformUserWithTokenGraphQL(userWithTokenRPC)
+}
+
+func (i *UserInteractor) UpdateUser(ctx context.Context, req *user_grpc.UpdateReq) (*graphql.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
+	defer cancel()
+	userRPC, err := i.UserRepository.Update(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return i.UserPresenter.TransformUserGraphQL(userRPC)
 }

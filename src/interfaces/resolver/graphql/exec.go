@@ -93,7 +93,7 @@ type MutationResolver interface {
 	UpdatePost(ctx context.Context, in UpdatePostInput) (*graphql1.Post, error)
 	DeletePost(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, in CreateUserInput) (*UserWithToken, error)
-	UpdateUser(ctx context.Context, in UpdateUserInput) (*UserWithToken, error)
+	UpdateUser(ctx context.Context, in UpdateUserInput) (*graphql1.User, error)
 	DeleteUser(ctx context.Context) (bool, error)
 	Login(ctx context.Context, in LoginInput) (*UserWithToken, error)
 }
@@ -417,7 +417,7 @@ type Mutation {
   updatePost(in: UpdatePostInput!): Post!
   deletePost(id: ID!): Boolean!
   createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): UserWithToken!
+  updateUser(in: UpdateUserInput!): User!
   deleteUser: Boolean!
   login(in: LoginInput!): UserWithToken!
 }
@@ -863,9 +863,9 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*UserWithToken)
+	res := resTmp.(*graphql1.User)
 	fc.Result = res
-	return ec.marshalNUserWithToken2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋinterfacesᚋresolverᚋgraphqlᚐUserWithToken(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋdomainᚋgraphqlᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {

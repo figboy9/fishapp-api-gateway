@@ -17,3 +17,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id *user_grpc.ID) (*user_g
 func (r *UserRepository) Create(ctx context.Context, req *user_grpc.CreateReq) (*user_grpc.UserWithToken, error) {
 	return r.Client.Create(ctx, req)
 }
+
+func (r *UserRepository) Update(ctx context.Context, req *user_grpc.UpdateReq) (*user_grpc.User, error) {
+	return r.Client.Update(ctx, req)
+}

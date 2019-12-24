@@ -13,7 +13,7 @@ type Mutation {
   updatePost(in: UpdatePostInput!): Post!
   deletePost(id: ID!): Boolean!
   createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): UserWithToken!
+  updateUser(in: UpdateUserInput!): User!
   deleteUser: Boolean!
   login(in: LoginInput!): UserWithToken!
 }
