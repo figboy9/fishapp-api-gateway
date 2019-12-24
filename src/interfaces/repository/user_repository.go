@@ -21,3 +21,7 @@ func (r *UserRepository) Create(ctx context.Context, req *user_grpc.CreateReq) (
 func (r *UserRepository) Update(ctx context.Context, req *user_grpc.UpdateReq) (*user_grpc.User, error) {
 	return r.Client.Update(ctx, req)
 }
+
+func (r *UserRepository) Delete(ctx context.Context, id *user_grpc.ID) (*user_grpc.DeleteRes, error) {
+	return r.Client.Delete(ctx, id)
+}

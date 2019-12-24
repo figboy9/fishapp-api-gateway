@@ -41,7 +41,11 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInpu
 }
 
 func (r *mutationResolver) DeleteUser(ctx context.Context) (bool, error) {
-	panic("not implemented")
+	userID, err := getUserIDCtx(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.UserInteractor.DeleteUser(ctx, &user_grpc.ID{Id: userID})
 }
 func (r *mutationResolver) Login(ctx context.Context, in gen.LoginInput) (*gen.UserWithToken, error) {
 	panic("not implemented")
