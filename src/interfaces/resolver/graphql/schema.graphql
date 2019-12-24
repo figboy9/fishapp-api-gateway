@@ -25,6 +25,7 @@ type Post {
   created_at: Time!
   updated_at: Time!
   user_id: ID!
+  user: User!
 }
 
 input CreatePostInput {

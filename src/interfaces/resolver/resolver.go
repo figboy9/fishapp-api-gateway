@@ -18,9 +18,15 @@ func (r *Resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }
 
+func (r *Resolver) Post() graphql.PostResolver {
+	return &postResolver{r}
+}
+
 type queryResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
+
+type postResolver struct{ *Resolver }
 
 type contextKey string
 
