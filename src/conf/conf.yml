@@ -6,4 +6,4 @@ grpc:
   post_url: post:50051
   user_url: user:50051
 auth:
-  jwtkey: jwtkey
+  pub_jwtkey:

@@ -1,7 +1,5 @@
 scalar Time
 
-
-
 type Query {
   posts(in: GetPostListInput): [Post!]!
   post(id: ID!): Post!
@@ -9,13 +7,15 @@ type Query {
 }
 
 type Mutation {
-  createPost(in: CreatePostInput!): Post!
-  updatePost(in: UpdatePostInput!): Post!
-  deletePost(id: ID!): Boolean!
+  createPost(in: CreatePostInput!): Post! # トークン必須 
+  updatePost(in: UpdatePostInput!): Post! # トークン必須 
+  deletePost(id: ID!): Boolean! # トークン必須
   createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): User!
-  deleteUser: Boolean!
+  updateUser(in: UpdateUserInput!): User! # トークン必須
+  deleteUser: Boolean! # トークン必須
   login(in: LoginInput!): UserWithToken!
+  logout: Boolean! # リフレッシュトークン必須
+  refreshToken: TokenPair! # リフレッシュトークン必須
 }
 
 type Post {

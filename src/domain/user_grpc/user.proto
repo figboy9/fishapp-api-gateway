@@ -2,23 +2,26 @@ syntax = "proto3";
 package user_grpc;
 import "validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
 
 
 service UserService {
   rpc Create(CreateReq) returns (UserWithToken);
   rpc GetByID(ID) returns (User);
   rpc Update(UpdateReq) returns (User);
-  rpc Delete(ID) returns (DeleteRes);
-  rpc RefreshIDToken(RefreshToken) returns (TokenPair);
+  rpc Delete(ID) returns (google.protobuf.BoolValue);
   rpc Login(LoginReq) returns (UserWithToken);
+  rpc AddBlackList(AddBlackListReq) returns (google.protobuf.BoolValue);
+  rpc CheckBlackListAndGenToken(CheckBlackListReq) returns (TokenPair);
 }
 
 message User {
   int64 id = 1;
   string name = 2;
   string email = 3;
-  google.protobuf.Timestamp createdAt = 4;
-  google.protobuf.Timestamp updatedAt = 5;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
 }
 
 message CreateReq {
@@ -39,8 +42,14 @@ message LoginReq {
   string password = 2 [(validate.rules).string.pattern = "^[A-Za-z0-9]{6,72}$"]; // 6文字以上72文字以下の英数字
 }
 
-message DeleteRes {
-  bool deleted = 1;
+message AddBlackListReq {
+  string jti = 1 [(validate.rules).string.uuid = true];
+  google.protobuf.Duration expiration = 2 [(validate.rules).duration.required = true];
+}
+
+message CheckBlackListReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  string jti = 2 [(validate.rules).string.uuid = true];
 }
 
 message ID {
@@ -49,14 +58,10 @@ message ID {
 
 message UserWithToken {
   User user = 1;
-  TokenPair tokenPair = 2;
-}
-
-message RefreshToken {
-  string refreshToken = 1;
+  TokenPair token_pair = 2;
 }
 
 message TokenPair{
-  string idToken = 1;
-  string refreshToken = 2;
+  string id_token = 1;
+  string refresh_token = 2;
 }

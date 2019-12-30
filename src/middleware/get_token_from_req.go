@@ -8,18 +8,17 @@ import (
 
 type contextKey string
 
-const idTokenCtxKey contextKey = "id-token"
+const tokenCtxKey contextKey = "id-token"
 
 func GetTokenFromReq(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		splitToken := strings.Split(token, "Bearer ")
-		token = splitToken[1]
-		ctx := context.WithValue(r.Context(), idTokenCtxKey, token)
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		ctx := context.WithValue(r.Context(), tokenCtxKey, token)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})

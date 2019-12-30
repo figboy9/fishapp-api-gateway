@@ -46,13 +46,15 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreatePost func(childComplexity int, in CreatePostInput) int
-		CreateUser func(childComplexity int, in CreateUserInput) int
-		DeletePost func(childComplexity int, id string) int
-		DeleteUser func(childComplexity int) int
-		Login      func(childComplexity int, in LoginInput) int
-		UpdatePost func(childComplexity int, in UpdatePostInput) int
-		UpdateUser func(childComplexity int, in UpdateUserInput) int
+		CreatePost   func(childComplexity int, in CreatePostInput) int
+		CreateUser   func(childComplexity int, in CreateUserInput) int
+		DeletePost   func(childComplexity int, id string) int
+		DeleteUser   func(childComplexity int) int
+		Login        func(childComplexity int, in LoginInput) int
+		Logout       func(childComplexity int) int
+		RefreshToken func(childComplexity int) int
+		UpdatePost   func(childComplexity int, in UpdatePostInput) int
+		UpdateUser   func(childComplexity int, in UpdateUserInput) int
 	}
 
 	Post struct {
@@ -98,6 +100,8 @@ type MutationResolver interface {
 	UpdateUser(ctx context.Context, in UpdateUserInput) (*graphql1.User, error)
 	DeleteUser(ctx context.Context) (bool, error)
 	Login(ctx context.Context, in LoginInput) (*UserWithToken, error)
+	Logout(ctx context.Context) (bool, error)
+	RefreshToken(ctx context.Context) (*graphql1.TokenPair, error)
 }
 type PostResolver interface {
 	User(ctx context.Context, obj *graphql1.Post) (*graphql1.User, error)
@@ -177,6 +181,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["in"].(LoginInput)), true
+
+	case "Mutation.logout":
+		if e.complexity.Mutation.Logout == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Logout(childComplexity), true
+
+	case "Mutation.refreshToken":
+		if e.complexity.Mutation.RefreshToken == nil {
+			break
+		}
+
+		return e.complexity.Mutation.RefreshToken(childComplexity), true
 
 	case "Mutation.updatePost":
 		if e.complexity.Mutation.UpdatePost == nil {
@@ -426,12 +444,14 @@ type Query {
 
 type Mutation {
   createPost(in: CreatePostInput!): Post!
-  updatePost(in: UpdatePostInput!): Post!
-  deletePost(id: ID!): Boolean!
+  updatePost(in: UpdatePostInput!): Post! # トークン必須 
+  deletePost(id: ID!): Boolean! # トークン必須
   createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): User!
-  deleteUser: Boolean!
-  login(in: LoginInput!): UserWithToken!
+  updateUser(in: UpdateUserInput!): User! # トークン必須
+  deleteUser: Boolean! # トークン必須
+  login(in: LoginInput!): UserWithToken! # トークン必須
+  logout: Boolean! # トークン必須
+  refreshToken: TokenPair! # トークン必須
 }
 
 type Post {
@@ -954,6 +974,74 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	res := resTmp.(*UserWithToken)
 	fc.Result = res
 	return ec.marshalNUserWithToken2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋinterfacesᚋresolverᚋgraphqlᚐUserWithToken(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Logout(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_refreshToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RefreshToken(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphql1.TokenPair)
+	fc.Result = res
+	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋdomainᚋgraphqlᚐTokenPair(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *graphql1.Post) (ret graphql.Marshaler) {
@@ -2964,6 +3052,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "login":
 			out.Values[i] = ec._Mutation_login(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logout":
+			out.Values[i] = ec._Mutation_logout(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "refreshToken":
+			out.Values[i] = ec._Mutation_refreshToken(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -21,13 +21,13 @@ type config struct {
 		UserURL string `mapstructure:"user_url"`
 	}
 	Auth struct {
-		Jwtkey string
+		PubJwtkey string `mapstructure:"pub_jwtkey"`
 	}
 }
 
 var C config
 
-func Readconf() {
+func init() {
 
 	viper.SetConfigName("conf")
 	viper.SetConfigType("yml")

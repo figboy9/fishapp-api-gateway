@@ -24,6 +24,8 @@ type UUserInteractor interface {
 	UpdateUser(ctx context.Context, req *user_grpc.UpdateReq) (*graphql.User, error)
 	DeleteUser(ctx context.Context, req *user_grpc.ID) (bool, error)
 	Login(ctx context.Context, req *user_grpc.LoginReq) (*gen.UserWithToken, error)
+	Logout(ctx context.Context, req *user_grpc.AddBlackListReq) (bool, error)
+	RefreshToken(ctx context.Context, req *user_grpc.CheckBlackListReq) (*graphql.TokenPair, error)
 }
 
 func (i *UserInteractor) User(ctx context.Context, id *user_grpc.ID) (*graphql.User, error) {
@@ -59,11 +61,11 @@ func (i *UserInteractor) UpdateUser(ctx context.Context, req *user_grpc.UpdateRe
 func (i *UserInteractor) DeleteUser(ctx context.Context, req *user_grpc.ID) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
 	defer cancel()
-	deleteRes, err := i.UserRepository.Delete(ctx, req)
+	boolValue, err := i.UserRepository.Delete(ctx, req)
 	if err != nil {
 		return false, err
 	}
-	return deleteRes.Deleted, nil
+	return boolValue.Value, nil
 }
 
 func (i *UserInteractor) Login(ctx context.Context, req *user_grpc.LoginReq) (*gen.UserWithToken, error) {
@@ -74,4 +76,23 @@ func (i *UserInteractor) Login(ctx context.Context, req *user_grpc.LoginReq) (*g
 		return nil, err
 	}
 	return i.UserPresenter.TransformUserWithTokenGraphQL(userWithTokenRPC)
+}
+
+func (i *UserInteractor) Logout(ctx context.Context, req *user_grpc.AddBlackListReq) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
+	defer cancel()
+	boolValue, err := i.UserRepository.AddBlackList(ctx, req)
+	if err != nil {
+		return false, err
+	}
+	return boolValue.Value, nil
+}
+func (i *UserInteractor) RefreshToken(ctx context.Context, req *user_grpc.CheckBlackListReq) (*graphql.TokenPair, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ContextTimeout)
+	defer cancel()
+	tokenPairRPC, err := i.UserRepository.CheckBlackListAndGenToken(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return i.UserPresenter.TransformTokenPairGraphQL(tokenPairRPC), nil
 }

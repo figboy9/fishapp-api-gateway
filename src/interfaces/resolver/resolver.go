@@ -1,6 +1,9 @@
 package resolver
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/interactor"
 )
@@ -30,4 +33,20 @@ type postResolver struct{ *Resolver }
 
 type contextKey string
 
-const UserIDCtxKey contextKey = "userID"
+type JwtClaims struct {
+	UserID    int64
+	Jti       string
+	ExpiresAt int64
+}
+
+const JwtCtxKey contextKey = "jwtClaims"
+
+func getJwtCtx(ctx context.Context) (JwtClaims, error) {
+	v := ctx.Value(JwtCtxKey)
+	jwtClaims, ok := v.(JwtClaims)
+	if !ok {
+		return JwtClaims{}, fmt.Errorf("Failed to get jwt climb from context")
+	}
+
+	return jwtClaims, nil
+}

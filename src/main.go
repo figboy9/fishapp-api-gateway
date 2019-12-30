@@ -12,8 +12,6 @@ import (
 )
 
 func main() {
-	conf.Readconf()
-	// mux := http.NewServeMux()
 	postClient, userClient := infrastructure.NewGrpcClient()
 	t := time.Duration(conf.C.Sv.Timeout) * time.Second
 	resolver := registry.NewGraphQLResolver(t, postClient, userClient)
