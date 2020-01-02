@@ -20,16 +20,22 @@ func FieldMiddleware(ctx context.Context, next graphql.Resolver) (interface{}, e
 		return next(ctx)
 	}
 	switch path := gqlgenCtx.Path(); path[0] {
-	case "createPost", "updatePost", "deletePost", "updateUser", "deleteUser", "refreshToken", "logout":
+	case "updateUser", "deleteUser", "refreshIDToken", "logout":
 		token, err := getTokenCtx(ctx)
 		if err != nil {
 			return nil, err
 		}
-		jwtClaimsCtx, err := validateToken(token)
+		ctx = context.WithValue(ctx, resolver.JwtTokenKey, token)
+	case "createPost", "updatePost", "deletePost":
+		token, err := getTokenCtx(ctx)
 		if err != nil {
 			return nil, err
 		}
-		ctx = context.WithValue(ctx, resolver.JwtCtxKey, jwtClaimsCtx)
+		jwtClaims, err := validateToken(token)
+		if err != nil {
+			return nil, err
+		}
+		ctx = context.WithValue(ctx, resolver.JwtClaimsCtxKey, jwtClaims)
 	}
 	return next(ctx)
 }
@@ -57,7 +63,7 @@ func validateToken(t string) (resolver.JwtClaims, error) {
 }
 
 func getTokenCtx(ctx context.Context) (string, error) {
-	v := ctx.Value(tokenCtxKey)
+	v := ctx.Value(jwtTokenKey)
 	token, ok := v.(string)
 	if !ok {
 		return "", fmt.Errorf("token not found")

@@ -21,15 +21,9 @@ func (r *Resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }
 
-func (r *Resolver) Post() graphql.PostResolver {
-	return &postResolver{r}
-}
-
 type queryResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
-
-type postResolver struct{ *Resolver }
 
 type contextKey string
 
@@ -39,14 +33,26 @@ type JwtClaims struct {
 	ExpiresAt int64
 }
 
-const JwtCtxKey contextKey = "jwtClaims"
+const JwtClaimsCtxKey contextKey = "jwtClaims"
 
-func getJwtCtx(ctx context.Context) (JwtClaims, error) {
-	v := ctx.Value(JwtCtxKey)
+const JwtTokenKey contextKey = "jwtToken"
+
+func getJwtClaimsCtx(ctx context.Context) (JwtClaims, error) {
+	v := ctx.Value(JwtClaimsCtxKey)
 	jwtClaims, ok := v.(JwtClaims)
 	if !ok {
-		return JwtClaims{}, fmt.Errorf("Failed to get jwt climb from context")
+		return JwtClaims{}, fmt.Errorf("Failed to get jwt Claims from context")
 	}
 
 	return jwtClaims, nil
+}
+
+func getJwtTokenCtx(ctx context.Context) (string, error) {
+	v := ctx.Value(JwtTokenKey)
+	token, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("Failed to get jwt token from context")
+	}
+
+	return token, nil
 }

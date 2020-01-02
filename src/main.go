@@ -12,9 +12,9 @@ import (
 )
 
 func main() {
-	postClient, userClient := infrastructure.NewGrpcClient()
+	postClient, authClient := infrastructure.NewGrpcClient()
 	t := time.Duration(conf.C.Sv.Timeout) * time.Second
-	resolver := registry.NewGraphQLResolver(t, postClient, userClient)
+	resolver := registry.NewGraphQLResolver(t, postClient, authClient)
 	srv, playground := infrastructure.NewGraphQLHandler(resolver, middleware.FieldMiddleware)
 	if conf.C.Sv.Debug {
 		http.Handle("/graphql/playground", playground)

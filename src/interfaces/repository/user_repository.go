@@ -3,37 +3,44 @@ package repository
 import (
 	"context"
 
-	"github.com/ezio1119/fishapp-api-gateway/domain/user_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/domain/auth_grpc"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/grpc/metadata"
 )
 
 type UserRepository struct {
-	Client user_grpc.UserServiceClient
+	Client auth_grpc.AuthServiceClient
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id *user_grpc.ID) (*user_grpc.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id *auth_grpc.ID) (*auth_grpc.User, error) {
 	return r.Client.GetByID(ctx, id)
 }
 
-func (r *UserRepository) Create(ctx context.Context, req *user_grpc.CreateReq) (*user_grpc.UserWithToken, error) {
+func (r *UserRepository) Create(ctx context.Context, req *auth_grpc.CreateReq) (*auth_grpc.UserWithToken, error) {
 	return r.Client.Create(ctx, req)
 }
 
-func (r *UserRepository) Update(ctx context.Context, req *user_grpc.UpdateReq) (*user_grpc.User, error) {
+func (r *UserRepository) Update(ctx context.Context, req *auth_grpc.UpdateReq, token string) (*auth_grpc.User, error) {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	return r.Client.Update(ctx, req)
 }
 
-func (r *UserRepository) Delete(ctx context.Context, id *user_grpc.ID) (*wrappers.BoolValue, error) {
-	return r.Client.Delete(ctx, id)
+func (r *UserRepository) Delete(ctx context.Context, token string) (*wrappers.BoolValue, error) {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	return r.Client.Delete(ctx, &empty.Empty{})
 }
 
-func (r *UserRepository) Login(ctx context.Context, req *user_grpc.LoginReq) (*user_grpc.UserWithToken, error) {
+func (r *UserRepository) Login(ctx context.Context, req *auth_grpc.LoginReq) (*auth_grpc.UserWithToken, error) {
 	return r.Client.Login(ctx, req)
 }
 
-func (r *UserRepository) AddBlackList(ctx context.Context, req *user_grpc.AddBlackListReq) (*wrappers.BoolValue, error) {
-	return r.Client.AddBlackList(ctx, req)
+func (r *UserRepository) Logout(ctx context.Context, token string) (*wrappers.BoolValue, error) {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	return r.Client.Logout(ctx, &empty.Empty{})
 }
-func (r *UserRepository) CheckBlackListAndGenToken(ctx context.Context, req *user_grpc.CheckBlackListReq) (*user_grpc.TokenPair, error) {
-	return r.Client.CheckBlackListAndGenToken(ctx, req)
+
+func (r *UserRepository) RefreshIDToken(ctx context.Context, token string) (*auth_grpc.TokenPair, error) {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	return r.Client.RefreshIDToken(ctx, &empty.Empty{})
 }

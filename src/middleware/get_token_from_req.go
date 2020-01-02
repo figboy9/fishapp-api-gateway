@@ -8,7 +8,7 @@ import (
 
 type contextKey string
 
-const tokenCtxKey contextKey = "id-token"
+const jwtTokenKey contextKey = "jwtToken"
 
 func GetTokenFromReq(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +18,7 @@ func GetTokenFromReq(next http.Handler) http.Handler {
 			return
 		}
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		ctx := context.WithValue(r.Context(), tokenCtxKey, token)
+		ctx := context.WithValue(r.Context(), jwtTokenKey, token)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})

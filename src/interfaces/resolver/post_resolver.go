@@ -31,7 +31,7 @@ func (r *queryResolver) Posts(ctx context.Context, in *gen.GetPostListInput) ([]
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInput) (*graphql.Post, error) {
-	jwtClaims, err := getJwtCtx(ctx)
+	jwtClaims, err := getJwtClaimsCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInpu
 }
 
 func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInput) (*graphql.Post, error) {
-	jwtClaims, err := getJwtCtx(ctx)
+	jwtClaims, err := getJwtClaimsCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInpu
 }
 
 func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
-	jwtClaims, err := getJwtCtx(ctx)
+	jwtClaims, err := getJwtClaimsCtx(ctx)
 	if err != nil {
 		return false, err
 	}
