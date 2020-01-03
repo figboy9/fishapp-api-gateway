@@ -14,18 +14,20 @@ import (
 	"github.com/ezio1119/fishapp-api-gateway/interfaces/resolver"
 )
 
-func FieldMiddleware(ctx context.Context, next graphql.Resolver) (interface{}, error) {
+func (*middleware) FieldMiddleware(ctx context.Context, next graphql.Resolver) (interface{}, error) {
 	gqlgenCtx := graphql.GetFieldContext(ctx)
 	if isMethod := gqlgenCtx.IsMethod; !isMethod {
 		return next(ctx)
 	}
 	switch path := gqlgenCtx.Path(); path[0] {
+	// 検証せずにトークンをコンテキストに保存
 	case "updateUser", "deleteUser", "refreshIDToken", "logout":
 		token, err := getTokenCtx(ctx)
 		if err != nil {
 			return nil, err
 		}
 		ctx = context.WithValue(ctx, resolver.JwtTokenKey, token)
+	// トークンを検証してclaimsをコンテキストに保存
 	case "createPost", "updatePost", "deletePost":
 		token, err := getTokenCtx(ctx)
 		if err != nil {
@@ -53,13 +55,12 @@ func validateToken(t string) (resolver.JwtClaims, error) {
 	if err != nil {
 		return resolver.JwtClaims{}, err
 	}
-	jwtClaimsCtx := resolver.JwtClaims{
+
+	return resolver.JwtClaims{
 		UserID:    userID,
 		Jti:       claims.Id,
 		ExpiresAt: claims.ExpiresAt,
-	}
-
-	return jwtClaimsCtx, nil
+	}, nil
 }
 
 func getTokenCtx(ctx context.Context) (string, error) {

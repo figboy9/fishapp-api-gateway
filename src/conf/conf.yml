@@ -5,5 +5,8 @@ sv:
 grpc:
   post_url: post:50051
   auth_url: auth:50051
+graphql:
+  playground: /graphql/playground
+  endpoint: /graphql
 auth:
   pub_jwtkey:

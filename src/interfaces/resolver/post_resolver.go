@@ -15,7 +15,7 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*graphql.Post, err
 	if err != nil {
 		return nil, err
 	}
-	return r.PostInteractor.Post(ctx, &post_grpc.ID{Id: intID})
+	return r.postInteractor.Post(ctx, &post_grpc.ID{Id: intID})
 }
 
 func (r *queryResolver) Posts(ctx context.Context, in *gen.GetPostListInput) ([]*graphql.Post, error) {
@@ -27,7 +27,7 @@ func (r *queryResolver) Posts(ctx context.Context, in *gen.GetPostListInput) ([]
 		Datetime: datetime,
 		Num:      int64(in.Num),
 	}
-	return r.PostInteractor.Posts(ctx, listReq)
+	return r.postInteractor.Posts(ctx, listReq)
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInput) (*graphql.Post, error) {
@@ -40,7 +40,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, in gen.CreatePostInpu
 		Content: in.Content,
 		UserId:  jwtClaims.UserID,
 	}
-	return r.PostInteractor.CreatePost(ctx, createReq)
+	return r.postInteractor.CreatePost(ctx, createReq)
 }
 
 func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInput) (*graphql.Post, error) {
@@ -55,7 +55,7 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, in gen.UpdatePostInpu
 		Content: in.Content,
 		UserId:  jwtClaims.UserID,
 	}
-	return r.PostInteractor.UpdatePost(ctx, updateReq)
+	return r.postInteractor.UpdatePost(ctx, updateReq)
 }
 
 func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, error) {
@@ -71,5 +71,5 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (bool, err
 		Id:     intID,
 		UserId: jwtClaims.UserID,
 	}
-	return r.PostInteractor.DeletePost(ctx, deleteReq)
+	return r.postInteractor.DeletePost(ctx, deleteReq)
 }

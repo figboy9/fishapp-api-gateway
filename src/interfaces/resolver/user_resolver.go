@@ -14,7 +14,7 @@ func (r *queryResolver) User(ctx context.Context, id string) (*graphql.User, err
 	if err != nil {
 		return nil, err
 	}
-	return r.UserInteractor.User(ctx, &auth_grpc.ID{Id: intID})
+	return r.userInteractor.User(ctx, &auth_grpc.ID{Id: intID})
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, in gen.CreateUserInput) (*gen.UserWithToken, error) {
@@ -22,7 +22,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, in gen.CreateUserInpu
 		Email:    in.Email,
 		Password: in.Password,
 	}
-	return r.UserInteractor.CreateUser(ctx, req)
+	return r.userInteractor.CreateUser(ctx, req)
 }
 
 func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInput) (*graphql.User, error) {
@@ -34,7 +34,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, in gen.UpdateUserInpu
 		Email:    in.Email,
 		Password: in.Password,
 	}
-	return r.UserInteractor.UpdateUser(ctx, req, token)
+	return r.userInteractor.UpdateUser(ctx, req, token)
 }
 
 func (r *mutationResolver) DeleteUser(ctx context.Context) (bool, error) {
@@ -42,7 +42,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.UserInteractor.DeleteUser(ctx, token)
+	return r.userInteractor.DeleteUser(ctx, token)
 }
 
 func (r *mutationResolver) Login(ctx context.Context, in gen.LoginInput) (*gen.UserWithToken, error) {
@@ -50,7 +50,7 @@ func (r *mutationResolver) Login(ctx context.Context, in gen.LoginInput) (*gen.U
 		Email:    in.Email,
 		Password: in.Password,
 	}
-	return r.UserInteractor.Login(ctx, req)
+	return r.userInteractor.Login(ctx, req)
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
@@ -58,12 +58,12 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.UserInteractor.Logout(ctx, token)
+	return r.userInteractor.Logout(ctx, token)
 }
 func (r *mutationResolver) RefreshIDToken(ctx context.Context) (*graphql.TokenPair, error) {
 	token, err := getJwtTokenCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return r.UserInteractor.RefreshIDToken(ctx, token)
+	return r.userInteractor.RefreshIDToken(ctx, token)
 }

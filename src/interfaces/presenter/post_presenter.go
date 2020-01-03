@@ -6,14 +6,19 @@ import (
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/usecase/presenter"
 	"github.com/golang/protobuf/ptypes"
 )
 
-type PostPresenter struct{}
+type postPresenter struct{}
+
+func NewPostPresenter() presenter.PostPresenter {
+	return &postPresenter{}
+}
 
 var location *time.Location
 
-func (*PostPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, error) {
+func (*postPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, error) {
 	id := strconv.FormatInt(p.Id, 10)
 	userID := strconv.FormatInt(p.UserId, 10)
 	updatedAt, err := ptypes.Timestamp(p.UpdatedAt)
@@ -35,7 +40,7 @@ func (*PostPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, er
 		UserID:    userID,
 	}, nil
 }
-func (p *PostPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*graphql.Post, error) {
+func (p *postPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*graphql.Post, error) {
 	list := make([]*graphql.Post, len(listRPC))
 	for i, postRPC := range listRPC {
 		post, err := p.TransformPostGraphQL(postRPC)

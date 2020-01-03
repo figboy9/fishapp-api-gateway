@@ -7,18 +7,19 @@ import (
 
 	"github.com/ezio1119/fishapp-api-gateway/conf"
 	"github.com/ezio1119/fishapp-api-gateway/infrastructure"
-	"github.com/ezio1119/fishapp-api-gateway/middleware"
+	"github.com/ezio1119/fishapp-api-gateway/infrastructure/middleware"
 	"github.com/ezio1119/fishapp-api-gateway/registry"
 )
 
 func main() {
 	postClient, authClient := infrastructure.NewGrpcClient()
 	t := time.Duration(conf.C.Sv.Timeout) * time.Second
-	resolver := registry.NewGraphQLResolver(t, postClient, authClient)
-	srv, playground := infrastructure.NewGraphQLHandler(resolver, middleware.FieldMiddleware)
+	r := registry.NewRegistry(postClient, authClient, t)
+	middLe := middleware.InitMiddleware()
+	srv, playground := infrastructure.NewGraphQLHandler(r.NewResolver(), middLe.FieldMiddleware)
 	if conf.C.Sv.Debug {
-		http.Handle("/graphql/playground", playground)
+		http.Handle(conf.C.Graphql.Playground, playground)
 	}
-	http.Handle("/graphql", middleware.GetTokenFromReq(srv))
+	http.Handle(conf.C.Graphql.Endpoint, middLe.GetTokenFromReq(srv))
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }

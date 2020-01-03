@@ -10,7 +10,7 @@ type contextKey string
 
 const jwtTokenKey contextKey = "jwtToken"
 
-func GetTokenFromReq(next http.Handler) http.Handler {
+func (*middleware) GetTokenFromReq(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {

@@ -23,6 +23,10 @@ type config struct {
 	Auth struct {
 		PubJwtkey string `mapstructure:"pub_jwtkey"`
 	}
+	Graphql struct {
+		Playground string
+		Endpoint   string
+	}
 }
 
 var C config

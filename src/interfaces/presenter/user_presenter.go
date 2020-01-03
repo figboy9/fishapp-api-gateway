@@ -6,12 +6,17 @@ import (
 	"github.com/ezio1119/fishapp-api-gateway/domain/auth_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	gen "github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
+	"github.com/ezio1119/fishapp-api-gateway/usecase/presenter"
 	"github.com/golang/protobuf/ptypes"
 )
 
-type UserPresenter struct{}
+type userPresenter struct{}
 
-func (p *UserPresenter) TransformUserGraphQL(u *auth_grpc.User) (*graphql.User, error) {
+func NewUserPresenter() presenter.UserPresenter {
+	return &userPresenter{}
+}
+
+func (p *userPresenter) TransformUserGraphQL(u *auth_grpc.User) (*graphql.User, error) {
 	id := strconv.FormatInt(u.Id, 10)
 	updatedAt, err := ptypes.Timestamp(u.UpdatedAt)
 	if err != nil {
@@ -31,7 +36,7 @@ func (p *UserPresenter) TransformUserGraphQL(u *auth_grpc.User) (*graphql.User, 
 	}, nil
 }
 
-func (p *UserPresenter) TransformUserWithTokenGraphQL(ut *auth_grpc.UserWithToken) (*gen.UserWithToken, error) {
+func (p *userPresenter) TransformUserWithTokenGraphQL(ut *auth_grpc.UserWithToken) (*gen.UserWithToken, error) {
 	user, err := p.TransformUserGraphQL(ut.User)
 	if err != nil {
 		return nil, err
@@ -42,7 +47,7 @@ func (p *UserPresenter) TransformUserWithTokenGraphQL(ut *auth_grpc.UserWithToke
 		TokenPair: tokenPair,
 	}, nil
 }
-func (p *UserPresenter) TransformTokenPairGraphQL(tp *auth_grpc.TokenPair) *graphql.TokenPair {
+func (p *userPresenter) TransformTokenPairGraphQL(tp *auth_grpc.TokenPair) *graphql.TokenPair {
 	return &graphql.TokenPair{
 		IDToken:      tp.IdToken,
 		RefreshToken: tp.RefreshToken,

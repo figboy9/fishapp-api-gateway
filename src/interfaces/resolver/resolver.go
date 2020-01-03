@@ -8,22 +8,26 @@ import (
 	"github.com/ezio1119/fishapp-api-gateway/usecase/interactor"
 )
 
-type Resolver struct {
-	PostInteractor interactor.UPostInteractor
-	UserInteractor interactor.UUserInteractor
+type resolver struct {
+	userInteractor interactor.UserInteractor
+	postInteractor interactor.PostInteractor
 }
 
-func (r *Resolver) Query() graphql.QueryResolver {
+func NewResolver(u interactor.UserInteractor, p interactor.PostInteractor) graphql.ResolverRoot {
+	return &resolver{u, p}
+}
+
+func (r *resolver) Query() graphql.QueryResolver {
 	return &queryResolver{r}
 }
 
-func (r *Resolver) Mutation() graphql.MutationResolver {
+func (r *resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }
 
-type queryResolver struct{ *Resolver }
+type queryResolver struct{ *resolver }
 
-type mutationResolver struct{ *Resolver }
+type mutationResolver struct{ *resolver }
 
 type contextKey string
 
