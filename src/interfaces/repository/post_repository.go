@@ -4,28 +4,33 @@ import (
 	"context"
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/usecase/repository"
 )
 
-type PostRepository struct {
-	Client post_grpc.PostServiceClient
+type postRepository struct {
+	client post_grpc.PostServiceClient
 }
 
-func (r *PostRepository) GetByID(ctx context.Context, id *post_grpc.ID) (*post_grpc.Post, error) {
-	return r.Client.GetByID(ctx, id)
+func NewPostRepository(c post_grpc.PostServiceClient) repository.PostRepository {
+	return &postRepository{client: c}
 }
 
-func (r *PostRepository) GetList(ctx context.Context, listReq *post_grpc.ListReq) (*post_grpc.ListPost, error) {
-	return r.Client.GetList(ctx, listReq)
+func (r *postRepository) GetByID(ctx context.Context, id *post_grpc.ID) (*post_grpc.Post, error) {
+	return r.client.GetByID(ctx, id)
 }
 
-func (r *PostRepository) Create(ctx context.Context, createReq *post_grpc.CreateReq) (*post_grpc.Post, error) {
-	return r.Client.Create(ctx, createReq)
+func (r *postRepository) GetList(ctx context.Context, listReq *post_grpc.ListReq) (*post_grpc.ListPost, error) {
+	return r.client.GetList(ctx, listReq)
 }
 
-func (r *PostRepository) Update(ctx context.Context, req *post_grpc.UpdateReq) (*post_grpc.Post, error) {
-	return r.Client.Update(ctx, req)
+func (r *postRepository) Create(ctx context.Context, createReq *post_grpc.CreateReq) (*post_grpc.Post, error) {
+	return r.client.Create(ctx, createReq)
 }
 
-func (r *PostRepository) Delete(ctx context.Context, req *post_grpc.DeleteReq) (*post_grpc.DeleteRes, error) {
-	return r.Client.Delete(ctx, req)
+func (r *postRepository) Update(ctx context.Context, req *post_grpc.UpdateReq) (*post_grpc.Post, error) {
+	return r.client.Update(ctx, req)
+}
+
+func (r *postRepository) Delete(ctx context.Context, req *post_grpc.DeleteReq) (*post_grpc.DeleteRes, error) {
+	return r.client.Delete(ctx, req)
 }

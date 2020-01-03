@@ -1,7 +1,5 @@
 scalar Time
 
-
-
 type Query {
   posts(in: GetPostListInput): [Post!]!
   post(id: ID!): Post!
@@ -9,44 +7,19 @@ type Query {
 }
 
 type Mutation {
-  createPost(in: CreatePostInput!): Post!
-  updatePost(in: UpdatePostInput!): Post!
-  deletePost(id: ID!): Boolean!
   createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): User!
-  deleteUser: Boolean!
+  updateUser(in: UpdateUserInput!): User! # トークン必須
+  deleteUser: Boolean! # トークン必須
   login(in: LoginInput!): UserWithToken!
-}
-
-type Post {
-  id: ID!
-  title: String!
-  content: String!
-  created_at: Time!
-  updated_at: Time!
-  user_id: ID!
-  user: User!
-}
-
-input CreatePostInput {
-  title: String!
-  content: String!
-}
-
-input UpdatePostInput{
-  id: ID!
-  title: String!
-  content: String!
-}
-
-input GetPostListInput{
-  num: Int!
-  datetime: Time!
+  logout: Boolean! # リフレッシュトークン必須
+  refreshIDToken: TokenPair! # リフレッシュトークン必須
+  createPost(in: CreatePostInput!): Post! # トークン必須 
+  updatePost(in: UpdatePostInput!): Post! # トークン必須 
+  deletePost(id: ID!): Boolean! # トークン必須
 }
 
 type User {
   id: ID!
-  name: String!
   email: String!
   created_at: Time!
   updated_at: Time!
@@ -63,13 +36,11 @@ type TokenPair {
 }
 
 input CreateUserInput {
-  name: String!
   email: String!
   password: String!
 }
 
-input UpdateUserInput{
-  name: String!
+input UpdateUserInput {
   email: String!
   password: String!
 }
@@ -77,4 +48,29 @@ input UpdateUserInput{
 input LoginInput {
   email: String!
   password: String!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  user_id: ID!
+  created_at: Time!
+  updated_at: Time!
+}
+
+input CreatePostInput {
+  title: String!
+  content: String!
+}
+
+input UpdatePostInput{
+  id: ID!
+  title: String!
+  content: String!
+}
+
+input GetPostListInput{
+  num: Int!
+  datetime: Time!
 }
