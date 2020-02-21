@@ -2,7 +2,7 @@ sv:
   timeout: 2
   port: 8080
   debug: true
-grpc:
+api:
   post_url: post:50051
   auth_url: auth:50051
   profile_url: profile:50051
