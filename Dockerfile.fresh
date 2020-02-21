@@ -1,4 +1,4 @@
-FROM golang:1.13.0-alpine3.10
+FROM golang:1.13-alpine
 ENV GO111MODULE=on \
     TZ=Asia/Tokyo
 WORKDIR /app
