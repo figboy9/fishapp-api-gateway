@@ -12,15 +12,15 @@ import (
 )
 
 func main() {
-	conf.Readconf()
-	// mux := http.NewServeMux()
-	postClient := infrastructure.NewGrpcClient()
+	postC, entryPostC, authC, profileC, chatC := infrastructure.NewGrpcClient()
 	t := time.Duration(conf.C.Sv.Timeout) * time.Second
-	resolver := registry.NewGraphQLResolver(t, postClient)
-	query, playground := infrastructure.NewGraphQLHandler(resolver)
+	r := registry.NewRegistry(postC, entryPostC, authC, profileC, chatC, t)
+	middLe := middleware.InitMiddleware()
+	srv, playground := infrastructure.NewGraphQLHandler(r.NewResolver(), middLe.FieldMiddleware)
 	if conf.C.Sv.Debug {
-		http.Handle("/graphql/playground", playground)
+		http.Handle(conf.C.Graphql.Playground, playground)
 	}
-	http.Handle("/graphql", middleware.GetToken(query))
+	http.Handle(conf.C.Graphql.Endpoint, middLe.GetTokenFromReq(srv))
+	
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }
