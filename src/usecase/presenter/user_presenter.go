@@ -9,5 +9,6 @@ import (
 type UserPresenter interface {
 	TransformUserGraphQL(*auth_grpc.User) (*graphql.User, error)
 	TransformUserWithTokenGraphQL(*auth_grpc.UserWithToken) (*gen.UserWithToken, error)
+	TransformUserProfileWithTokenGraphQL(*auth_grpc.UserWithToken, *graphql.Profile) (*gen.UserProfileWithToken, error)
 	TransformTokenPairGraphQL(*auth_grpc.TokenPair) *graphql.TokenPair
 }

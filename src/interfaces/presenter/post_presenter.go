@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ezio1119/fishapp-api-gateway/domain/entry_post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/presenter"
@@ -40,10 +41,10 @@ func (*postPresenter) TransformPostGraphQL(p *post_grpc.Post) (*graphql.Post, er
 		UserID:    userID,
 	}, nil
 }
-func (p *postPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*graphql.Post, error) {
-	list := make([]*graphql.Post, len(listRPC))
-	for i, postRPC := range listRPC {
-		post, err := p.TransformPostGraphQL(postRPC)
+func (p *postPresenter) TransformListPostGraphQL(listProto []*post_grpc.Post) ([]*graphql.Post, error) {
+	list := make([]*graphql.Post, len(listProto))
+	for i, postProto := range listProto {
+		post, err := p.TransformPostGraphQL(postProto)
 		if err != nil {
 			return nil, err
 		}
@@ -54,4 +55,39 @@ func (p *postPresenter) TransformListPostGraphQL(listRPC []*post_grpc.Post) ([]*
 
 func init() {
 	location = time.Now().Location()
+}
+
+func (p *postPresenter) TransformEntryPostGraphQL(e *entry_post_grpc.Entry) (*graphql.EntryPost, error) {
+	id := strconv.FormatInt(e.Id, 10)
+	userID := strconv.FormatInt(e.UserId, 10)
+	postID := strconv.FormatInt(e.PostId, 10)
+	updatedAt, err := ptypes.Timestamp(e.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	createdAt, err := ptypes.Timestamp(e.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	updatedAt = updatedAt.In(location)
+	createdAt = createdAt.In(location)
+	return &graphql.EntryPost{
+		ID:        id,
+		UserID:    userID,
+		PostID:    postID,
+		UpdatedAt: updatedAt,
+		CreatedAt: createdAt,
+	}, nil
+}
+
+func (p *postPresenter) TransformEntriesGraphQL(entriesProto []*entry_post_grpc.Entry) ([]*graphql.EntryPost, error) {
+	entries := make([]*graphql.EntryPost, len(entriesProto))
+	for i, entryProto := range entriesProto {
+		entry, err := p.TransformEntryPostGraphQL(entryProto)
+		if err != nil {
+			return nil, err
+		}
+		entries[i] = entry
+	}
+	return entries, nil
 }

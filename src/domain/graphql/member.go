@@ -2,9 +2,10 @@ package graphql
 
 import "time"
 
-type User struct {
+type Member struct {
 	ID        string
-	Email     string
+	RoomID    string
+	UserID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

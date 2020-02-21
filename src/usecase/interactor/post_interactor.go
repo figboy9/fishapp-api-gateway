@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/ezio1119/fishapp-api-gateway/domain/entry_post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/presenter"
@@ -11,13 +12,14 @@ import (
 )
 
 type postInteractor struct {
-	postRepository repository.PostRepository
-	postPresenter  presenter.PostPresenter
-	ctxTimeout     time.Duration
+	postRepository      repository.PostRepository
+	entryPostRepository repository.EntryPostRepository
+	postPresenter       presenter.PostPresenter
+	ctxTimeout          time.Duration
 }
 
-func NewPostInteractor(r repository.PostRepository, p presenter.PostPresenter, t time.Duration) PostInteractor {
-	return &postInteractor{r, p, t}
+func NewPostInteractor(pr repository.PostRepository, er repository.EntryPostRepository, pp presenter.PostPresenter, t time.Duration) PostInteractor {
+	return &postInteractor{pr, er, pp, t}
 }
 
 type PostInteractor interface {
@@ -26,6 +28,9 @@ type PostInteractor interface {
 	CreatePost(ctx context.Context, req *post_grpc.CreateReq) (*graphql.Post, error)
 	UpdatePost(ctx context.Context, req *post_grpc.UpdateReq) (*graphql.Post, error)
 	DeletePost(ctx context.Context, req *post_grpc.DeleteReq) (bool, error)
+	CreateEntryPost(ctx context.Context, req *entry_post_grpc.CreateReq) (*graphql.EntryPost, error)
+	DeleteEntryPost(ctx context.Context, req *entry_post_grpc.DeleteReq) (bool, error)
+	Entries(ctx context.Context, req *entry_post_grpc.ID) ([]*graphql.EntryPost, error)
 }
 
 func (i *postInteractor) Post(ctx context.Context, id *post_grpc.ID) (*graphql.Post, error) {
@@ -75,5 +80,36 @@ func (i *postInteractor) DeletePost(ctx context.Context, req *post_grpc.DeleteRe
 	if err != nil {
 		return false, err
 	}
-	return deleteRes.Deleted, nil
+	return deleteRes.Value, nil
+}
+
+func (i *postInteractor) CreateEntryPost(ctx context.Context, req *entry_post_grpc.CreateReq) (*graphql.EntryPost, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
+	defer cancel()
+	entryProto, err := i.entryPostRepository.Create(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return i.postPresenter.TransformEntryPostGraphQL(entryProto)
+}
+
+func (i *postInteractor) DeleteEntryPost(ctx context.Context, req *entry_post_grpc.DeleteReq) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
+	defer cancel()
+	res, err := i.entryPostRepository.Delete(ctx, req)
+	if err != nil {
+		return false, err
+	}
+	return res.Value, nil
+}
+
+func (i *postInteractor) Entries(ctx context.Context, req *entry_post_grpc.ID) ([]*graphql.EntryPost, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
+	defer cancel()
+	entriesProto, err := i.entryPostRepository.GetListByPostID(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return i.postPresenter.TransformEntriesGraphQL(entriesProto)
 }
