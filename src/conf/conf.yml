@@ -5,6 +5,8 @@ sv:
 grpc:
   post_url: post:50051
   auth_url: auth:50051
+  profile_url: profile:50051
+  chat_url: chat:50051
 graphql:
   playground: /graphql/playground
   endpoint: /graphql

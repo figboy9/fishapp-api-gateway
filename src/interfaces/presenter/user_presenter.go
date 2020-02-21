@@ -47,6 +47,19 @@ func (p *userPresenter) TransformUserWithTokenGraphQL(ut *auth_grpc.UserWithToke
 		TokenPair: tokenPair,
 	}, nil
 }
+
+func (p *userPresenter) TransformUserProfileWithTokenGraphQL(tp *auth_grpc.UserWithToken, profile *graphql.Profile) (*gen.UserProfileWithToken, error) {
+	userWithToken, err := p.TransformUserWithTokenGraphQL(tp)
+	if err != nil {
+		return nil, err
+	}
+	return &gen.UserProfileWithToken{
+		User:      userWithToken.User,
+		Profile:   profile,
+		TokenPair: userWithToken.TokenPair,
+	}, nil
+}
+
 func (p *userPresenter) TransformTokenPairGraphQL(tp *auth_grpc.TokenPair) *graphql.TokenPair {
 	return &graphql.TokenPair{
 		IDToken:      tp.IdToken,

@@ -13,11 +13,27 @@ func (r *registry) NewResolver() graphql.ResolverRoot {
 		interactor.NewUserInteractor(
 			repository.NewUserRepository(r.authClient),
 			presenter.NewUserPresenter(),
+			interactor.NewProfileInteractor(
+				repository.NewProfileRepository(r.profileClient),
+				presenter.NewProfilePresenter(),
+				r.timeout,
+			),
+			r.timeout,
+		),
+		interactor.NewProfileInteractor(
+			repository.NewProfileRepository(r.profileClient),
+			presenter.NewProfilePresenter(),
 			r.timeout,
 		),
 		interactor.NewPostInteractor(
 			repository.NewPostRepository(r.postClient),
+			repository.NewEntryRepository(r.entryPostClient),
 			presenter.NewPostPresenter(),
+			r.timeout,
+		),
+		interactor.NewChatInteractor(
+			repository.NewChatRepository(r.chatClient),
+			presenter.NewChatPresenter(),
 			r.timeout,
 		),
 	)

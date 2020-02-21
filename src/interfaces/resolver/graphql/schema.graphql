@@ -4,18 +4,60 @@ type Query {
   posts(in: GetPostListInput): [Post!]!
   post(id: ID!): Post!
   user(id: ID!): User!
+  profile(userID: ID!): Profile!
 }
 
 type Mutation {
-  createUser(in: CreateUserInput!): UserWithToken!
-  updateUser(in: UpdateUserInput!): User! # トークン必須
-  deleteUser: Boolean! # トークン必須
+  createUserProfile(in: CreateUserProfileInput!): UserProfileWithToken!
+  deleteUserProfile: Boolean! # Token required
+  updateUser(in: UpdateUserInput!): User! # Token required
   login(in: LoginInput!): UserWithToken!
-  logout: Boolean! # リフレッシュトークン必須
-  refreshIDToken: TokenPair! # リフレッシュトークン必須
-  createPost(in: CreatePostInput!): Post! # トークン必須 
-  updatePost(in: UpdatePostInput!): Post! # トークン必須 
-  deletePost(id: ID!): Boolean! # トークン必須
+  logout: Boolean! # Refresh token required
+  refreshIDToken: TokenPair! # Refresh token required
+  updateProfile(in: UpdateProfileInput!): Profile! # Token required 
+  createPost(in: CreatePostInput!): Post! # Token required 
+  updatePost(in: UpdatePostInput!): Post! # Token required 
+  deletePost(id: ID!): Boolean! # Token required
+  createEntryPost(post_id: ID!): EntryPost! # Token required
+  deleteEntryPost(id: ID!): Boolean! # Token required
+  createChatRoom(post_id: ID!): ChatRoom!
+  addMemberToChatRoom(in: AddMemberInput!): Member!
+  sendMessage(in: SendMessageInput!): Message!
+}
+
+type Subscription {
+  messageAdded(room_ids: [ID!]!): Message!
+}
+
+input SendMessageInput {
+  room_id: ID!
+  body: String!
+}
+
+input AddMemberInput {
+  room_id: ID!
+}
+
+type ChatRoom {
+  id: ID!
+  post_id: ID!
+  created_at: Time!
+  updated_at: Time!
+}
+
+type Member {
+  id: ID!
+  room_id: ID!
+  user_id: ID!
+}
+
+type Message {
+  id: ID!
+  body: String!
+  room_id: ID!
+  user_id: ID!
+  created_at: Time!
+  updated_at: Time!
 }
 
 type User {
@@ -25,9 +67,38 @@ type User {
   updated_at: Time!
 }
 
+type Profile {
+  id: ID!
+  name: String!
+  user_id: ID!
+  user: User!
+  created_at: Time!
+  updated_at: Time!
+}
+
+type EntryPost {
+  id: ID!
+  user_id: ID!
+  post_id: ID!
+  profile: Profile!
+  post: Post!
+  created_at: Time!
+  updated_at: Time!
+}
+
 type UserWithToken {
   user: User!
   tokenPair: TokenPair!
+}
+
+type UserProfileWithToken {
+  user: User!
+  profile: Profile!
+  tokenPair: TokenPair!
+}
+
+input UpdateProfileInput {
+  name: String!
 }
 
 type TokenPair {
@@ -35,7 +106,8 @@ type TokenPair {
   refreshToken: String!
 }
 
-input CreateUserInput {
+input CreateUserProfileInput {
+  name: String!
   email: String!
   password: String!
 }
@@ -55,6 +127,8 @@ type Post {
   title: String!
   content: String!
   user_id: ID!
+  profile: Profile!
+  entries: [EntryPost!]!
   created_at: Time!
   updated_at: Time!
 }

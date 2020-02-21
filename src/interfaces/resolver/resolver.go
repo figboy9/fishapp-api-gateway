@@ -4,30 +4,68 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
+	gen "github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/interactor"
 )
 
 type resolver struct {
-	userInteractor interactor.UserInteractor
-	postInteractor interactor.PostInteractor
+	// sync.RWMutex
+	// gqlChans          map[int64]chan *graphql.Message
+	userInteractor    interactor.UserInteractor
+	profileInteractor interactor.ProfileInteractor
+	postInteractor    interactor.PostInteractor
+	chatInteractor    interactor.ChatInteractor
 }
 
-func NewResolver(u interactor.UserInteractor, p interactor.PostInteractor) graphql.ResolverRoot {
-	return &resolver{u, p}
+func NewResolver(
+	u interactor.UserInteractor,
+	pri interactor.ProfileInteractor,
+	pi interactor.PostInteractor,
+	ci interactor.ChatInteractor,
+) gen.ResolverRoot {
+	return &resolver{
+		// RWMutex:           sync.RWMutex{},
+		// gqlChans:          map[int64]chan *graphql.Message{},
+		userInteractor:    u,
+		profileInteractor: pri,
+		postInteractor:    pi,
+		chatInteractor:    ci,
+	}
 }
 
-func (r *resolver) Query() graphql.QueryResolver {
+func (r *resolver) EntryPost() gen.EntryPostResolver {
+	return &entryPostResolver{r}
+}
+
+func (r *resolver) Mutation() gen.MutationResolver {
+	return &mutationResolver{r}
+}
+func (r *resolver) Post() gen.PostResolver {
+	return &postResolver{r}
+}
+func (r *resolver) Profile() gen.ProfileResolver {
+	return &profileResolver{r}
+}
+func (r *resolver) Query() gen.QueryResolver {
 	return &queryResolver{r}
 }
-
-func (r *resolver) Mutation() graphql.MutationResolver {
-	return &mutationResolver{r}
+func (r *resolver) Subscription() gen.SubscriptionResolver {
+	return &subscriptionResolver{r}
 }
 
 type queryResolver struct{ *resolver }
 
 type mutationResolver struct{ *resolver }
+
+type profileResolver struct{ *resolver }
+
+type postResolver struct{ *resolver }
+
+type entryPostResolver struct{ *resolver }
+
+type subscriptionResolver struct{ *resolver }
+
+type chatRoomResolver struct{ *resolver }
 
 type contextKey string
 

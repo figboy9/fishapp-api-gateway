@@ -8,25 +8,27 @@ import (
 	gen "github.com/ezio1119/fishapp-api-gateway/interfaces/resolver/graphql"
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/auth_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/domain/profile_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/presenter"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/repository"
 )
 
 type userInteractor struct {
-	userRepository repository.UserRepository
-	userPresenter  presenter.UserPresenter
-	ctxTimeout     time.Duration
+	userRepository    repository.UserRepository
+	userPresenter     presenter.UserPresenter
+	profileInteractor ProfileInteractor
+	ctxTimeout        time.Duration
 }
 
-func NewUserInteractor(r repository.UserRepository, p presenter.UserPresenter, t time.Duration) UserInteractor {
-	return &userInteractor{r, p, t}
+func NewUserInteractor(r repository.UserRepository, p presenter.UserPresenter, pi ProfileInteractor, t time.Duration) UserInteractor {
+	return &userInteractor{r, p, pi, t}
 }
 
 type UserInteractor interface {
 	User(ctx context.Context, id *auth_grpc.ID) (*graphql.User, error)
-	CreateUser(ctx context.Context, req *auth_grpc.CreateReq) (*gen.UserWithToken, error)
+	CreateUserProfile(ctx context.Context, userReq *auth_grpc.CreateReq, profileReq *profile_grpc.CreateReq) (*gen.UserProfileWithToken, error)
+	DeleteUserProfile(ctx context.Context, token string, userID *profile_grpc.ID) (bool, error)
 	UpdateUser(ctx context.Context, req *auth_grpc.UpdateReq, token string) (*graphql.User, error)
-	DeleteUser(ctx context.Context, token string) (bool, error)
 	Login(ctx context.Context, req *auth_grpc.LoginReq) (*gen.UserWithToken, error)
 	Logout(ctx context.Context, token string) (bool, error)
 	RefreshIDToken(ctx context.Context, token string) (*graphql.TokenPair, error)
@@ -52,6 +54,22 @@ func (i *userInteractor) CreateUser(ctx context.Context, req *auth_grpc.CreateRe
 	return i.userPresenter.TransformUserWithTokenGraphQL(userWithTokenProto)
 }
 
+func (i *userInteractor) CreateUserProfile(ctx context.Context, u *auth_grpc.CreateReq, p *profile_grpc.CreateReq) (*gen.UserProfileWithToken, error) {
+	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
+	defer cancel()
+	userWithTokenProto, err := i.userRepository.Create(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+	p.UserId = userWithTokenProto.User.Id
+	profile, err := i.profileInteractor.CreateProfile(ctx, p)
+	if err != nil {
+		_, _ = i.userRepository.Delete(ctx, userWithTokenProto.TokenPair.IdToken)
+		return nil, err
+	}
+	return i.userPresenter.TransformUserProfileWithTokenGraphQL(userWithTokenProto, profile)
+}
+
 func (i *userInteractor) UpdateUser(ctx context.Context, req *auth_grpc.UpdateReq, token string) (*graphql.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
 	defer cancel()
@@ -62,14 +80,18 @@ func (i *userInteractor) UpdateUser(ctx context.Context, req *auth_grpc.UpdateRe
 	return i.userPresenter.TransformUserGraphQL(userProto)
 }
 
-func (i *userInteractor) DeleteUser(ctx context.Context, token string) (bool, error) {
+func (i *userInteractor) DeleteUserProfile(ctx context.Context, token string, userID *profile_grpc.ID) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, i.ctxTimeout)
 	defer cancel()
-	boolValue, err := i.userRepository.Delete(ctx, token)
+	success, err := i.userRepository.Delete(ctx, token)
 	if err != nil {
 		return false, err
 	}
-	return boolValue.Value, nil
+	profileRes, err := i.profileInteractor.DeleteProfile(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	return success.Value && profileRes, nil
 }
 
 func (i *userInteractor) Login(ctx context.Context, req *auth_grpc.LoginReq) (*gen.UserWithToken, error) {

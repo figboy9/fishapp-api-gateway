@@ -19,6 +19,8 @@ type config struct {
 	Grpc struct {
 		PostURL string `mapstructure:"post_url"`
 		AuthURL string `mapstructure:"auth_url"`
+		ProfileURL string `mapstructure:"profile_url"`
+		ChatURL string `mapstructure:"chat_url"`
 	}
 	Auth struct {
 		PubJwtkey string `mapstructure:"pub_jwtkey"`

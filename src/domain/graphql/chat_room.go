@@ -2,9 +2,9 @@ package graphql
 
 import "time"
 
-type User struct {
+type ChatRoom struct {
 	ID        string
-	Email     string
+	PostID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

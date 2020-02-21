@@ -10,7 +10,7 @@ exec:
 model:
   filename: gen.go
 resolver:
-  filename: ../resolver.go
+  filename: ../../../tmp/resolver.go
   type: resolver
 autobind:
   - github.com/ezio1119/fishapp-api-gateway/domain/graphql

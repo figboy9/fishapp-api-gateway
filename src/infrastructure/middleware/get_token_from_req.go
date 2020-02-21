@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 )
 
 type contextKey string
@@ -22,4 +24,13 @@ func (*middleware) GetTokenFromReq(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func GetTokenFromWebsocketInit(ctx context.Context, p transport.InitPayload) (context.Context, error) {
+	authHeader := p.Authorization()
+	if authHeader == "" {
+		return ctx, nil
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	return context.WithValue(ctx, jwtTokenKey, token), nil
 }

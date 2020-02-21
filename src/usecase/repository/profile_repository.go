@@ -9,7 +9,7 @@ import (
 
 type ProfileRepository interface {
 	Create(ctx context.Context, req *profile_grpc.CreateReq) (*profile_grpc.Profile, error)
-	GetByUserID(ctx context.Context, id *profile_grpc.ID) (*profile_grpc.Profile, error)
-	Update(ctx context.Context, id *profile_grpc.ID) (*profile_grpc.Profile, error)
-	Delete(ctx context.Context, id *profile_grpc.ID) (*wrappers.BoolValue, error)
+	GetByUserID(ctx context.Context, userID *profile_grpc.ID) (*profile_grpc.Profile, error)
+	Update(ctx context.Context, req *profile_grpc.UpdateReq) (*profile_grpc.Profile, error)
+	Delete(ctx context.Context, userID *profile_grpc.ID) (*wrappers.BoolValue, error)
 }

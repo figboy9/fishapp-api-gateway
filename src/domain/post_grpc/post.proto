@@ -2,13 +2,15 @@ syntax = "proto3";
 package post_grpc;
 import "validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
 
 service PostService {
   rpc Create(CreateReq) returns (Post);
   rpc GetByID(ID) returns (Post);
   rpc GetList(ListReq) returns (ListPost);
   rpc Update(UpdateReq) returns (Post);
-  rpc Delete(DeleteReq) returns (DeleteRes);
+  rpc Delete(DeleteReq) returns (google.protobuf.BoolValue);
 }
 
 message Post {
@@ -49,8 +51,4 @@ message ID {
 
 message ListPost {
   repeated Post posts = 1;
-}
-
-message DeleteRes {
-  bool deleted = 1;
 }

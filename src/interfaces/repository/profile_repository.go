@@ -16,15 +16,15 @@ func NewProfileRepository(c profile_grpc.ProfileServiceClient) repository.Profil
 	return &profileRepository{client: c}
 }
 
-func (*profileRepository) Create(ctx context.Context, req *profile_grpc.CreateReq) (*profile_grpc.Profile, error) {
-	panic("not implement")
+func (r *profileRepository) Create(ctx context.Context, req *profile_grpc.CreateReq) (*profile_grpc.Profile, error) {
+	return r.client.Create(ctx, req)
 }
-func (*profileRepository) GetByUserID(ctx context.Context, id *profile_grpc.ID) (*profile_grpc.Profile, error) {
-	panic("not implement")
+func (r *profileRepository) GetByUserID(ctx context.Context, userID *profile_grpc.ID) (*profile_grpc.Profile, error) {
+	return r.client.GetByUserID(ctx, userID)
 }
-func (*profileRepository) Update(ctx context.Context, id *profile_grpc.ID) (*profile_grpc.Profile, error) {
-	panic("not implement")
+func (r *profileRepository) Update(ctx context.Context, req *profile_grpc.UpdateReq) (*profile_grpc.Profile, error) {
+	return r.client.Update(ctx, req)
 }
-func (*profileRepository) Delete(ctx context.Context, id *profile_grpc.ID) (*wrappers.BoolValue, error) {
-	panic("not implement")
+func (r *profileRepository) Delete(ctx context.Context, userID *profile_grpc.ID) (*wrappers.BoolValue, error) {
+	return r.client.Delete(ctx, userID)
 }

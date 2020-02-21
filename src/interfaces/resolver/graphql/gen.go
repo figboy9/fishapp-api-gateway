@@ -8,12 +8,17 @@ import (
 	graphql1 "github.com/ezio1119/fishapp-api-gateway/domain/graphql"
 )
 
+type AddMemberInput struct {
+	RoomID string `json:"room_id"`
+}
+
 type CreatePostInput struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
 
-type CreateUserInput struct {
+type CreateUserProfileInput struct {
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -28,15 +33,30 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type SendMessageInput struct {
+	RoomID string `json:"room_id"`
+	Body   string `json:"body"`
+}
+
 type UpdatePostInput struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
 
+type UpdateProfileInput struct {
+	Name string `json:"name"`
+}
+
 type UpdateUserInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type UserProfileWithToken struct {
+	User      *graphql1.User      `json:"user"`
+	Profile   *graphql1.Profile   `json:"profile"`
+	TokenPair *graphql1.TokenPair `json:"tokenPair"`
 }
 
 type UserWithToken struct {

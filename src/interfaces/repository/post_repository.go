@@ -5,6 +5,7 @@ import (
 
 	"github.com/ezio1119/fishapp-api-gateway/domain/post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/usecase/repository"
+	"github.com/golang/protobuf/ptypes/wrappers"
 )
 
 type postRepository struct {
@@ -31,6 +32,6 @@ func (r *postRepository) Update(ctx context.Context, req *post_grpc.UpdateReq) (
 	return r.client.Update(ctx, req)
 }
 
-func (r *postRepository) Delete(ctx context.Context, req *post_grpc.DeleteReq) (*post_grpc.DeleteRes, error) {
+func (r *postRepository) Delete(ctx context.Context, req *post_grpc.DeleteReq) (*wrappers.BoolValue, error) {
 	return r.client.Delete(ctx, req)
 }

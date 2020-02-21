@@ -19,7 +19,8 @@ func (*middleware) FieldMiddleware(ctx context.Context, next graphql.Resolver) (
 	if isMethod := gqlgenCtx.IsMethod; !isMethod {
 		return next(ctx)
 	}
-	switch path := gqlgenCtx.Path(); path[0] {
+
+	switch path := gqlgenCtx.Path().String(); path {
 	// 検証せずにトークンをコンテキストに保存
 	case "updateUser", "deleteUser", "refreshIDToken", "logout":
 		token, err := getTokenCtx(ctx)
@@ -28,7 +29,7 @@ func (*middleware) FieldMiddleware(ctx context.Context, next graphql.Resolver) (
 		}
 		ctx = context.WithValue(ctx, resolver.JwtTokenKey, token)
 	// トークンを検証してclaimsをコンテキストに保存
-	case "createPost", "updatePost", "deletePost":
+	case "createPost", "updatePost", "deletePost", "updateProfile", "createEntryPost", "deleteEntryPost", "createChatRoom", "sendMessage", "messageAdded", "addMemberToChatRoom":
 		token, err := getTokenCtx(ctx)
 		if err != nil {
 			return nil, err
@@ -37,6 +38,18 @@ func (*middleware) FieldMiddleware(ctx context.Context, next graphql.Resolver) (
 		if err != nil {
 			return nil, err
 		}
+		ctx = context.WithValue(ctx, resolver.JwtClaimsCtxKey, jwtClaims)
+		// トークンを検証してclaimsとトークンをコンテキストに保存
+	case "deleteUserProfile":
+		token, err := getTokenCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jwtClaims, err := validateToken(token)
+		if err != nil {
+			return nil, err
+		}
+		ctx = context.WithValue(ctx, resolver.JwtTokenKey, token)
 		ctx = context.WithValue(ctx, resolver.JwtClaimsCtxKey, jwtClaims)
 	}
 	return next(ctx)
