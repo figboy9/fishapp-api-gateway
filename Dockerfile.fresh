@@ -1,9 +1,7 @@
 FROM golang:1.13-alpine
-ENV GO111MODULE=on \
-    TZ=Asia/Tokyo
+
 WORKDIR /app
-RUN apk add --no-cache \
-        alpine-sdk && \
+RUN apk add --no-cache alpine-sdk && \
     go get github.com/pilu/fresh
 
 COPY src /app
