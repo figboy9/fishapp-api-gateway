@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -21,6 +22,8 @@ func main() {
 		http.Handle(conf.C.Graphql.Playground, playground)
 	}
 	http.Handle(conf.C.Graphql.Endpoint, middLe.GetTokenFromReq(srv))
-	
+	http.HandleFunc("/healthy", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprintln(w, "healthy")
+	})
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }
