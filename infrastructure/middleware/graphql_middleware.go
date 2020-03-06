@@ -74,6 +74,7 @@ func getTokenCtx(ctx context.Context) (string, error) {
 var publicKey *ecdsa.PublicKey
 
 func init() {
+	var err error
 	publicKey, err = jwt.ParseECPublicKeyFromPEM([]byte(conf.C.Auth.PubJwtkey))
 	if err != nil {
 		log.Fatal(err)
