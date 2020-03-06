@@ -1,0 +1,37 @@
+extend type Query {
+  profile(userId: ID!): Profile! 
+}
+
+extend type Mutation {
+  createProfile(input: CreateProfileInput!): CreateProfilePayload! @isAuthenticated
+  deleteProfile: DeleteProfilePayload! @isAuthenticated
+  updateProfile(input: UpdateProfileInput!): UpdateProfilePayload! @isAuthenticated
+}
+
+type Profile {
+  id: ID!
+  name: String!
+  userId: ID!
+  created_at: Time!
+  updated_at: Time!
+}
+
+input CreateProfileInput {
+  name: String!
+}
+
+type CreateProfilePayload {
+  profile: Profile!
+}
+
+type DeleteProfilePayload {
+  success: Boolean!
+}
+
+input UpdateProfileInput {
+  name: String!
+}
+
+type UpdateProfilePayload {
+  profile: Profile!
+}

@@ -3,9 +3,9 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: Dockerfile.fresh
+      dockerfile: Dockerfile.dev
     volumes:
-      - ./src/.:/app
+      - .:/app
     environment:
       TZ: Asia/Tokyo
     ports:
