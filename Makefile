@@ -12,7 +12,7 @@ proto:
 	$(api).proto
 
 gql:
-	$(DC) exec api-gateway go run github.com/99designs/gqlgen generate
+	$(DC) run --rm api-gateway go run github.com/99designs/gqlgen generate
 
 up:
 	$(DC) up -d
