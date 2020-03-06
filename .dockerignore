@@ -1,1 +1,8 @@
 *.pem
+Makefile
+.gitignore
+tmp
+Dockerfile.dev
+gqlgen.yml
+*.md
+.github

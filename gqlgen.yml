@@ -1,0 +1,27 @@
+schema:
+  - schema/**/*.graphql
+
+exec:
+  filename: graph/generated/generated.go
+  package: generated
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  type: resolver
+
+autobind:
+  - "github.com/ezio1119/fishapp-api-gateway/graph/model"
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64

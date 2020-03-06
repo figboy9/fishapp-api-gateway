@@ -1,0 +1,69 @@
+directive @isAuthenticated(
+  authAPI: Boolean! = false # Token is required when requesting authAPI
+) on FIELD_DEFINITION
+
+extend type Query {
+  user(id: ID!): User!
+}
+
+extend type Mutation {
+  createUser(input: CreateUserInput!): CreateUserPayload!
+  deleteUser: DeleteUserPayload! @isAuthenticated(authAPI: true)
+  updateUser(input: UpdateUserInput!): UpdateUserPayload! @isAuthenticated(authAPI: true)
+  refreshIDToken: RefreshIDTokenPayload! @isAuthenticated(authAPI: true)
+  login(input: LoginInput!): LoginPayload! @isAuthenticated(authAPI: true)
+  logout: LogoutPayload! @isAuthenticated(authAPI: true)
+}
+
+type User {
+  id: ID!
+  email: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+}
+
+type CreateUserPayload {
+  user: User!
+  tokenPair: TokenPair!
+}
+
+type DeleteUserPayload{
+  success: Boolean!
+}
+
+input UpdateUserInput {
+  email: String!
+  password: String!
+}
+
+type UpdateUserPayload {
+  user: User!
+}
+
+type RefreshIDTokenPayload{
+  tokenPair: TokenPair!
+}
+
+type TokenPair {
+  idToken: String!
+  refreshToken: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type LoginPayload {
+  user: User!
+  tokenPair: TokenPair!
+}
+
+type LogoutPayload {
+  success: Boolean!
+}

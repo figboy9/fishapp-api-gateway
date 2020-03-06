@@ -1,0 +1,98 @@
+syntax = "proto3";
+package post_grpc;
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+
+service PostService {
+  rpc GetPostByID(GetPostByIDReq) returns (GetPostByIDRes); // post_idで投稿を取得
+  rpc GetListPosts(GetListPostsReq) returns (GetListPostsRes); // 取得件数と日時を指定して投稿を複数取得
+  rpc CreatePost(CreatePostReq) returns (CreatePostRes); // 投稿を作成
+  rpc UpdatePost(UpdatePostReq) returns (UpdatePostRes); // 投稿を更新
+  rpc DeletePost(DeletePostReq) returns (DeletePostRes); // 投稿を削除
+
+  rpc CreateApplyPost(CreateApplyPostReq) returns (CreateApplyPostRes);
+  rpc DeleteApplyPost(DeleteApplyPostReq) returns (DeleteApplyPostRes);
+}
+
+message Post {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+  int64 user_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message GetPostByIDReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+}
+
+message GetPostByIDRes {
+  Post post = 1;
+}
+
+message GetListPostsReq {
+  int64 num = 1 [(validate.rules).int64 = {gte:1, lte: 100}]; // created_at DESC
+}
+
+message GetListPostsRes {
+  repeated Post posts = 1;
+}
+
+message CreatePostReq {
+  string title = 1 [(validate.rules).string = {min_len: 1, max_len: 20}];
+  string content = 2 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  int64 user_id= 3 [(validate.rules).int64.gte = 1]; // トークンに含まれていたidを送る
+}
+
+message CreatePostRes {
+  Post post = 1;
+}
+
+message UpdatePostReq  {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  string title = 2 [(validate.rules).string = {min_len: 1, max_len: 20}];
+  string content = 3 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  int64 user_id= 4 [(validate.rules).int64.gte = 1]; // トークンに含まれていたidを送る
+}
+
+message UpdatePostRes {
+  Post post = 1;
+}
+
+message DeletePostReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  int64 user_id= 2 [(validate.rules).int64.gte = 1];
+}
+
+message DeletePostRes {
+  bool success = 1;
+}
+
+
+message ApplyPost {
+  int64 id = 1;
+  int64 post_id = 2;
+  int64 user_id = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message CreateApplyPostReq {
+  int64 post_id = 1 [(validate.rules).int64.gte = 1];
+  int64 user_id= 2 [(validate.rules).int64.gte = 1];
+}
+
+message CreateApplyPostRes {
+  ApplyPost apply_post = 1;
+}
+
+message DeleteApplyPostReq {
+  int64 id = 1 [(validate.rules).int64.gte = 1];
+  int64 user_id = 2 [(validate.rules).int64.gte = 1];
+}
+
+message DeleteApplyPostRes {
+  bool success = 1;
+}
