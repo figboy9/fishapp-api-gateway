@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strconv"
 
@@ -75,16 +74,7 @@ func getTokenCtx(ctx context.Context) (string, error) {
 var publicKey *ecdsa.PublicKey
 
 func init() {
-	var err error
-	data := []byte(conf.C.Auth.PubJwtkey)
-	if conf.C.Sv.Debug {
-		// 開発環境はpemから読み込む
-		data, err = ioutil.ReadFile("./dev_pub_jwtkey.pem")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	publicKey, err = jwt.ParseECPublicKeyFromPEM(data)
+	publicKey, err = jwt.ParseECPublicKeyFromPEM([]byte(conf.C.Auth.PubJwtkey))
 	if err != nil {
 		log.Fatal(err)
 	}
