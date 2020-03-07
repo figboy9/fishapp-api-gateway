@@ -10,6 +10,9 @@ RUN go build -o main .
 
 FROM alpine
 WORKDIR /app
-CMD ["./main"]
+RUN apk add --no-cache tzdata
 COPY --from=builder /src/main .
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /src/conf/conf.yml /app/conf/conf.yml
+
+CMD ["./main"]

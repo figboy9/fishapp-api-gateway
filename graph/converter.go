@@ -11,12 +11,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 )
 
-var loc *time.Location
-
-func init() {
-	loc = time.Now().Location()
-}
-
 func convertPostGQL(p *post_grpc.Post) (*model.Post, error) {
 	updatedAt, err := ptypes.Timestamp(p.UpdatedAt)
 	if err != nil {
@@ -31,8 +25,8 @@ func convertPostGQL(p *post_grpc.Post) (*model.Post, error) {
 		Title:     p.Title,
 		Content:   p.Content,
 		UserID:    p.UserId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -61,8 +55,8 @@ func convertApplyPostGQL(a *post_grpc.ApplyPost) (*model.ApplyPost, error) {
 		ID:        a.Id,
 		PostID:    a.PostId,
 		UserID:    a.UserId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -78,8 +72,8 @@ func convertUserGQL(u *auth_grpc.User) (*model.User, error) {
 	return &model.User{
 		ID:        u.Id,
 		Email:     u.Email,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -103,8 +97,8 @@ func convertProfileGQL(p *profile_grpc.Profile) (*model.Profile, error) {
 		ID:        p.Id,
 		Name:      p.Name,
 		UserID:    p.UserId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -120,8 +114,8 @@ func convertChatRoomGQL(r *chat_grpc.Room) (*model.ChatRoom, error) {
 	return &model.ChatRoom{
 		ID:        r.Id,
 		PostID:    r.PostId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -138,8 +132,8 @@ func convertRoomMemberGQL(m *chat_grpc.Member) (*model.RoomMember, error) {
 		ID:        m.Id,
 		RoomID:    m.RoomId,
 		UserID:    m.UserId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }
 
@@ -157,7 +151,7 @@ func convertRoomMessageGQL(m *chat_grpc.Message) (*model.RoomMessage, error) {
 		Body:      m.Body,
 		RoomID:    m.RoomId,
 		UserID:    m.UserId,
-		UpdatedAt: updatedAt.In(loc),
-		CreatedAt: createdAt.In(loc),
+		UpdatedAt: updatedAt.In(time.Local),
+		CreatedAt: createdAt.In(time.Local),
 	}, nil
 }

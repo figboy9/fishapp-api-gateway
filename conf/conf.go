@@ -1,9 +1,7 @@
 package conf
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
@@ -42,13 +40,11 @@ func init() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
 		log.Fatalln(err)
 	}
 
 	if err := viper.Unmarshal(&C); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 
 	spew.Dump(C)
