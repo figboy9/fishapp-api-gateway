@@ -1,4 +1,3 @@
-*.pem
 Makefile
 .gitignore
 tmp
