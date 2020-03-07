@@ -12,7 +12,6 @@ FROM alpine
 WORKDIR /app
 RUN apk add --no-cache tzdata
 COPY --from=builder /src/main .
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /src/conf/conf.yml /app/conf/conf.yml
 
 CMD ["./main"]
