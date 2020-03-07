@@ -3,13 +3,14 @@ package middleware
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/ezio1119/fishapp-api-gateway/conf"
+	"github.com/vektah/gqlparser/v2/gqlerror"
+
 	"github.com/ezio1119/fishapp-api-gateway/graph"
 )
 
@@ -66,7 +67,13 @@ func getTokenCtx(ctx context.Context) (string, error) {
 	v := ctx.Value(jwtTokenKey)
 	token, ok := v.(string)
 	if !ok {
-		return "", fmt.Errorf("token not found")
+		return "", &gqlerror.Error{
+			Message: "missing token in 'Authorization' header",
+			Extensions: map[string]interface{}{
+				"code": "UNAUTHENTICATED",
+			},
+		}
+
 	}
 	return token, nil
 }
