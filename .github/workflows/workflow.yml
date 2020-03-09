@@ -3,7 +3,7 @@ name: Build and Publish to GCR
 on:
   push:
     branches:
-    - dev
+    - master
 
 env:
   GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
