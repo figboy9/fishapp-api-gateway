@@ -1,5 +1,6 @@
 schema:
   - schema/**/*.graphql
+  # - schema/**/profile.graphql
 
 exec:
   filename: graph/generated/generated.go
@@ -17,8 +18,23 @@ resolver:
 
 autobind:
   - "github.com/ezio1119/fishapp-api-gateway/graph/model"
+  - "github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
+  - "github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
+  - "github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
 
 models:
+  Sex:
+    model:
+      - "github.com/ezio1119/fishapp-api-gateway/graph/model.Sex"
+  PostOrderBy:
+    model:
+      - "github.com/ezio1119/fishapp-api-gateway/graph/model.PostOrderBy"
+  PostSortBy:
+    model:
+      - "github.com/ezio1119/fishapp-api-gateway/graph/model.PostSortBy"
+  Time:
+    model:
+      - "github.com/ezio1119/fishapp-api-gateway/graph/scalar.TimeProto"
   ID:
     model:
       - github.com/99designs/gqlgen/graphql.Int64

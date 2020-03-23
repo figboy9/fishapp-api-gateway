@@ -3,63 +3,43 @@
 package model
 
 import (
-	"time"
+	"github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
-
-type AddMemberChatRoomInput struct {
-	RoomID int64 `json:"roomId"`
-}
-
-type AddMemberChatRoomPayload struct {
-	Member *RoomMember `json:"member"`
-}
-
-type ApplyPost struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"userId"`
-	PostID    int64     `json:"postId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type ChatRoom struct {
-	ID        int64     `json:"id"`
-	PostID    int64     `json:"postId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
 
 type CreateApplyPostInput struct {
 	PostID int64 `json:"postId"`
 }
 
 type CreateApplyPostPayload struct {
-	ApplyPost *ApplyPost `json:"applyPost"`
-}
-
-type CreateChatRoomInput struct {
-	PostID int64 `json:"postId"`
-}
-
-type CreateChatRoomPayload struct {
-	Room *ChatRoom `json:"room"`
+	ApplyPost *post_grpc.ApplyPost `json:"applyPost"`
 }
 
 type CreatePostInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title             string              `json:"title"`
+	Content           string              `json:"content"`
+	FishingSpotTypeID int64               `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64             `json:"fishTypeIds"`
+	PrefectureID      int64               `json:"prefectureId"`
+	MeetingPlaceID    string              `json:"meetingPlaceId"`
+	MeetingAt         timestamp.Timestamp `json:"meetingAt"`
+	MaxApply          int64               `json:"maxApply"`
 }
 
 type CreatePostPayload struct {
-	Post *Post `json:"post"`
+	Post *post_grpc.Post `json:"post"`
 }
 
 type CreateProfileInput struct {
-	Name string `json:"name"`
+	Name         string           `json:"name"`
+	Introduction string           `json:"introduction"`
+	Sex          profile_grpc.Sex `json:"sex"`
 }
 
 type CreateProfilePayload struct {
-	Profile *Profile `json:"profile"`
+	Profile *profile_grpc.Profile `json:"profile"`
 }
 
 type CreateUserInput struct {
@@ -68,8 +48,8 @@ type CreateUserInput struct {
 }
 
 type CreateUserPayload struct {
-	User      *User      `json:"user"`
-	TokenPair *TokenPair `json:"tokenPair"`
+	User      *auth_grpc.User      `json:"user"`
+	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
 }
 
 type DeleteApplyPostInput struct {
@@ -88,34 +68,18 @@ type DeletePostPayload struct {
 	Success bool `json:"success"`
 }
 
-type DeleteProfilePayload struct {
-	Success bool `json:"success"`
-}
-
-type DeleteUserPayload struct {
-	Success bool `json:"success"`
-}
-
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type LoginPayload struct {
-	User      *User      `json:"user"`
-	TokenPair *TokenPair `json:"tokenPair"`
+	User      *auth_grpc.User      `json:"user"`
+	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
 }
 
 type LogoutPayload struct {
 	Success bool `json:"success"`
-}
-
-type MessageAddedInput struct {
-	RoomIds []int64 `json:"roomIds"`
-}
-
-type MessageAddedPayload struct {
-	Message *RoomMessage `json:"message"`
 }
 
 type PageInfo struct {
@@ -123,97 +87,58 @@ type PageInfo struct {
 	EndCursor   *string `json:"endCursor"`
 }
 
-type Post struct {
-	ID        int64     `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
 type PostConnection struct {
-	PageInfo *PageInfo `json:"pageInfo"`
-	Nodes    []*Post   `json:"nodes"`
+	PageInfo *PageInfo         `json:"pageInfo"`
+	Nodes    []*post_grpc.Post `json:"nodes"`
 }
 
 type PostsInput struct {
-	NotImplement *string `json:"notImplement"`
-}
-
-type Profile struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	PrefectureID      *int64                                 `json:"prefectureId"`
+	FishingSpotTypeID *int64                                 `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64                                `json:"fishTypeIds"`
+	MeetingAtFrom     *timestamp.Timestamp                   `json:"meetingAtFrom"`
+	MeetingAtTo       *timestamp.Timestamp                   `json:"meetingAtTo"`
+	CanApply          *bool                                  `json:"canApply"`
+	OrderBy           *post_grpc.ListPostsReq_Filter_OrderBy `json:"orderBy"`
+	SortBy            *post_grpc.ListPostsReq_Filter_SortBy  `json:"sortBy"`
+	UserID            *int64                                 `json:"userId"`
 }
 
 type RefreshIDTokenPayload struct {
-	TokenPair *TokenPair `json:"tokenPair"`
-}
-
-type RoomMember struct {
-	ID        int64     `json:"id"`
-	RoomID    int64     `json:"roomId"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type RoomMessage struct {
-	ID        int64     `json:"id"`
-	Body      string    `json:"body"`
-	RoomID    int64     `json:"roomId"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type SendMessageChatRoomInput struct {
-	Body   string `json:"body"`
-	RoomID int64  `json:"roomId"`
-}
-
-type SendMessageChatRoomPayload struct {
-	Message *RoomMessage `json:"message"`
-}
-
-type TokenPair struct {
-	IDToken      string `json:"idToken"`
-	RefreshToken string `json:"refreshToken"`
+	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
 }
 
 type UpdatePostInput struct {
-	ID      int64  `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	ID                int64               `json:"id"`
+	Title             string              `json:"title"`
+	Content           string              `json:"content"`
+	FishingSpotTypeID int64               `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64             `json:"fishTypeIds"`
+	PrefectureID      int64               `json:"prefectureId"`
+	MeetingPlaceID    string              `json:"meetingPlaceId"`
+	MeetingAt         timestamp.Timestamp `json:"meetingAt"`
+	MaxApply          int64               `json:"maxApply"`
 }
 
 type UpdatePostPayload struct {
-	Post *Post `json:"post"`
+	Post *post_grpc.Post `json:"post"`
 }
 
 type UpdateProfileInput struct {
-	Name string `json:"name"`
+	Name         string `json:"name"`
+	Introduction string `json:"introduction"`
 }
 
 type UpdateProfilePayload struct {
-	Profile *Profile `json:"profile"`
+	Profile *profile_grpc.Profile `json:"profile"`
 }
 
 type UpdateUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email       string `json:"email"`
+	OldPassword string `json:"oldPassword"`
+	Password    string `json:"password"`
 }
 
 type UpdateUserPayload struct {
-	User *User `json:"user"`
-}
-
-type User struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	User *auth_grpc.User `json:"user"`
 }
