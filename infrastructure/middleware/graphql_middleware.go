@@ -3,47 +3,35 @@ package middleware
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"log"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/ezio1119/fishapp-api-gateway/conf"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 
+	"github.com/ezio1119/fishapp-api-gateway/graph/gqlerr"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
 )
 
-func (*middleware) AuthMiddleware(ctx context.Context, obj interface{}, next graphql.Resolver, authAPI bool) (res interface{}, err error) {
-	if authAPI {
-		return next(ctx)
-	}
-	t, err := getTokenCtx(ctx)
+func (*middleware) Authentication(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+	t, err := getTokenFromCtx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, gqlerr.AuthenticationError(err.Error())
 	}
-
-	c, err := getClaimsToken(t)
+	c, err := getClaimsFromToken(t)
 	if err != nil {
-		return nil, err
+		return nil, gqlerr.AuthenticationError("token validation failed: %s", err)
+	}
+	if c.Subject != "id_token" {
+		return nil, gqlerr.AuthenticationError("invalid tokentype: require id_token")
 	}
 	ctx = context.WithValue(ctx, model.JwtClaimsCtxKey, *c)
 
 	return next(ctx)
 }
 
-// func setJwtClaimsCtx(ctx context.Context, c *model.JwtClaims) (context.Context, error) {
-// 	userID, err := strconv.ParseInt(c.User.ID, 10, 64)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return context.WithValue(ctx, model.JwtClaimsCtxKey, graph.JwtClaims{
-// 		UserID:    userID,
-// 		Jti:       c.Id,
-// 		ExpiresAt: c.ExpiresAt,
-// 	}), nil
-// }
-
-func getClaimsToken(t string) (*model.JwtClaims, error) {
+func getClaimsFromToken(t string) (*model.JwtClaims, error) {
 	token, err := jwt.ParseWithClaims(t, &model.JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return publicKey, nil
 	})
@@ -53,17 +41,11 @@ func getClaimsToken(t string) (*model.JwtClaims, error) {
 	return nil, err
 }
 
-func getTokenCtx(ctx context.Context) (string, error) {
+func getTokenFromCtx(ctx context.Context) (string, error) {
 	v := ctx.Value(model.JwtTokenKey)
 	token, ok := v.(string)
 	if !ok {
-		return "", &gqlerror.Error{
-			Message: "missing token in 'Authorization' header",
-			Extensions: map[string]interface{}{
-				"code": "UNAUTHENTICATED",
-			},
-		}
-
+		return "", errors.New("missing token in 'Authorization' header")
 	}
 	return token, nil
 }

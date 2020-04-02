@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/ezio1119/fishapp-api-gateway/graph/generated"
+	"github.com/ezio1119/fishapp-api-gateway/graph/gqlerr"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
@@ -29,9 +30,9 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 }
 
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.UpdateUserPayload, error) {
-	t, err := getJwtTokenCtx(ctx)
+	t, err := getTokenFromCtx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, gqlerr.AuthenticationError("missing token in 'Authorization' header: %s", err)
 	}
 	u, err := r.authClient.UpdateUser(
 		metadata.AppendToOutgoingContext(ctx, "authorization", t),
@@ -47,9 +48,9 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUse
 }
 
 func (r *mutationResolver) RefreshIDToken(ctx context.Context) (*model.RefreshIDTokenPayload, error) {
-	t, err := getJwtTokenCtx(ctx)
+	t, err := getTokenFromCtx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, gqlerr.AuthenticationError("missing token in 'Authorization' header: %s", err)
 	}
 	res, err := r.authClient.RefreshIDToken(
 		metadata.AppendToOutgoingContext(ctx, "authorization", t),
@@ -73,9 +74,9 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (*model.LogoutPayload, error) {
-	t, err := getJwtTokenCtx(ctx)
+	t, err := getTokenFromCtx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, gqlerr.AuthenticationError("missing token in 'Authorization' header: %s", err)
 	}
 	if _, err := r.authClient.Logout(
 		metadata.AppendToOutgoingContext(ctx, "authorization", t),
@@ -86,8 +87,15 @@ func (r *mutationResolver) Logout(ctx context.Context) (*model.LogoutPayload, er
 	return &model.LogoutPayload{Success: true}, nil
 }
 
-func (r *queryResolver) User(ctx context.Context, id int64) (*auth_grpc.User, error) {
-	u, err := r.authClient.GetUser(ctx, &auth_grpc.GetUserReq{Id: id})
+func (r *queryResolver) User(ctx context.Context) (*auth_grpc.User, error) {
+	t, err := getTokenFromCtx(ctx)
+	if err != nil {
+		return nil, gqlerr.AuthenticationError("missing token in 'Authorization' header: %s", err)
+	}
+	u, err := r.authClient.GetUser(
+		metadata.AppendToOutgoingContext(ctx, "authorization", t),
+		&auth_grpc.GetUserReq{},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +105,7 @@ func (r *queryResolver) User(ctx context.Context, id int64) (*auth_grpc.User, er
 func (r *userResolver) Posts(ctx context.Context, obj *auth_grpc.User) ([]*post_grpc.Post, error) {
 	res, err := r.postClient.ListPosts(ctx, &post_grpc.ListPostsReq{Filter: &post_grpc.ListPostsReq_Filter{
 		UserId: obj.Id,
-	}, PageSize: 30})
+	}})
 	if err != nil {
 		return nil, err
 	}

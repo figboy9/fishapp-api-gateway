@@ -23,6 +23,7 @@ func main() {
 	http.Handle(conf.C.Graphql.Endpoint,
 		dataloader.LoaderMiddleware(
 			pro,
+			p,
 			middLe.GetTokenFromReq(srv),
 		))
 	http.HandleFunc("/healthy", func(w http.ResponseWriter, _ *http.Request) {

@@ -11,7 +11,7 @@ import (
 type middleware struct{}
 
 type Middleware interface {
-	AuthMiddleware(ctx context.Context, obj interface{}, next graphql.Resolver, authAPI bool) (res interface{}, err error)
+	Authentication(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	GetTokenFromReq(next http.Handler) http.Handler
 	GetTokenFromWebsocketInit(ctx context.Context, p transport.InitPayload) (context.Context, error)
 }

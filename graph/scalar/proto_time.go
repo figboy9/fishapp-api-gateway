@@ -2,7 +2,6 @@ package scalar
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"time"
@@ -13,12 +12,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func MarshalTimeProto(t timestamp.Timestamp) graphql.Marshaler {
-	a, _ := ptypes.Timestamp(&t)
-	a = a.In(time.Local)
-	fmt.Println(time.Local)
+func MarshalTimeProto(protoT timestamp.Timestamp) graphql.Marshaler {
+	t, _ := ptypes.Timestamp(&protoT)
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.Quote(a.Format(time.RFC3339)))
+		io.WriteString(w, strconv.Quote(t.In(time.Local).Format(time.RFC3339)))
 	})
 }
 

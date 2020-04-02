@@ -4,6 +4,7 @@ package model
 
 import (
 	"github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/grpc/chat_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -15,6 +16,23 @@ type CreateApplyPostInput struct {
 
 type CreateApplyPostPayload struct {
 	ApplyPost *post_grpc.ApplyPost `json:"applyPost"`
+}
+
+type CreateMemberInput struct {
+	RoomID int64 `json:"roomId"`
+}
+
+type CreateMemberPayload struct {
+	Member *chat_grpc.Member `json:"member"`
+}
+
+type CreateMessageInput struct {
+	Body   string `json:"body"`
+	RoomID int64  `json:"roomId"`
+}
+
+type CreateMessagePayload struct {
+	Message *chat_grpc.Message `json:"message"`
 }
 
 type CreatePostInput struct {
@@ -42,6 +60,14 @@ type CreateProfilePayload struct {
 	Profile *profile_grpc.Profile `json:"profile"`
 }
 
+type CreateRoomInput struct {
+	PostID int64 `json:"postId"`
+}
+
+type CreateRoomPayload struct {
+	Room *chat_grpc.Room `json:"room"`
+}
+
 type CreateUserInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -53,10 +79,18 @@ type CreateUserPayload struct {
 }
 
 type DeleteApplyPostInput struct {
-	ApplyPostID int64 `json:"applyPostId"`
+	ID int64 `json:"id"`
 }
 
 type DeleteApplyPostPayload struct {
+	Success bool `json:"success"`
+}
+
+type DeleteMemberInput struct {
+	RoomID int64 `json:"roomId"`
+}
+
+type DeleteMemberPayload struct {
 	Success bool `json:"success"`
 }
 
@@ -80,6 +114,14 @@ type LoginPayload struct {
 
 type LogoutPayload struct {
 	Success bool `json:"success"`
+}
+
+type MessageAddedInput struct {
+	RoomID int64 `json:"roomId"`
+}
+
+type MessageAddedPayload struct {
+	Message *chat_grpc.Message `json:"message"`
 }
 
 type PageInfo struct {

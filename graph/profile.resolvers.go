@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) CreateProfile(ctx context.Context, input model.CreateProfileInput) (*model.CreateProfilePayload, error) {
-	c, err := getJwtClaimsCtx(ctx)
+	c, err := getClaimsFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *mutationResolver) CreateProfile(ctx context.Context, input model.Create
 }
 
 func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.UpdateProfileInput) (*model.UpdateProfilePayload, error) {
-	c, err := getJwtClaimsCtx(ctx)
+	c, err := getClaimsFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}

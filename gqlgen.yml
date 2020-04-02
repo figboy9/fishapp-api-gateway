@@ -21,6 +21,7 @@ autobind:
   - "github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
   - "github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
   - "github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
+  - "github.com/ezio1119/fishapp-api-gateway/grpc/chat_grpc"
 
 models:
   Sex:
