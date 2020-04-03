@@ -13,9 +13,12 @@ import (
 )
 
 func main() {
-	middLe := middleware.InitMiddleware()
+
+	pubsubC := infrastructure.NewCloudPubSubClient()
+	defer pubsubC.Close()
 	p, a, pro, c := infrastructure.NewGrpcClient()
-	r := graph.NewResolver(p, a, pro, c)
+	middLe := middleware.InitMiddleware()
+	r := graph.NewResolver(p, a, pro, c, pubsubC)
 	srv, playground := infrastructure.NewGraphQLHandler(r, middLe)
 	if conf.C.Sv.Debug {
 		http.Handle(conf.C.Graphql.Playground, playground)
@@ -29,5 +32,6 @@ func main() {
 	http.HandleFunc("/healthy", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintln(w, "healthy")
 	})
+
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }

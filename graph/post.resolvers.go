@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/ezio1119/fishapp-api-gateway/graph/dataloader"
@@ -32,6 +33,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("キトや")
 
 	p, err := r.postClient.CreatePost(ctx, &post_grpc.CreatePostReq{
 		Title:             input.Title,

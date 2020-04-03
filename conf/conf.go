@@ -14,6 +14,9 @@ type config struct {
 		Port    string
 		Debug   bool
 	}
+	Gcp struct {
+		ProjectID string `mapstructure:"project_id"`
+	}
 	API struct {
 		PostURL    string `mapstructure:"post_url"`
 		AuthURL    string `mapstructure:"auth_url"`

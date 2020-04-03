@@ -8,6 +8,12 @@ services:
       - .:/app
     environment:
       TZ: Asia/Tokyo
+      PUBSUB_EMULATOR_HOST: pubsub:8085
     ports:
       - "8080:8080"
     tty: true
+
+  pubsub:
+    image: knarz/pubsub-emulator:latest
+    ports:
+      - "8085:8085"

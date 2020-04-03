@@ -5,6 +5,7 @@ package graph
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 import (
+	"cloud.google.com/go/pubsub"
 	"github.com/ezio1119/fishapp-api-gateway/graph/generated"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
 	"github.com/ezio1119/fishapp-api-gateway/grpc/chat_grpc"
@@ -17,6 +18,7 @@ type resolver struct {
 	authClient    auth_grpc.AuthServiceClient
 	profileClient profile_grpc.ProfileServiceClient
 	chatClient    chat_grpc.ChatServiceClient
+	pubsubClient  *pubsub.Client
 }
 
 func NewResolver(
@@ -24,6 +26,7 @@ func NewResolver(
 	a auth_grpc.AuthServiceClient,
 	pro profile_grpc.ProfileServiceClient,
 	c chat_grpc.ChatServiceClient,
+	pubsub *pubsub.Client,
 ) generated.ResolverRoot {
-	return &resolver{p, a, pro, c}
+	return &resolver{p, a, pro, c, pubsub}
 }

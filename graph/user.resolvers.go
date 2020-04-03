@@ -5,7 +5,9 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/ezio1119/fishapp-api-gateway/graph/generated"
 	"github.com/ezio1119/fishapp-api-gateway/graph/gqlerr"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
@@ -16,17 +18,46 @@ import (
 )
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error) {
-	res, err := r.authClient.CreateUser(ctx, &auth_grpc.CreateUserReq{
-		Email:    input.Email,
-		Password: input.Password,
+	// _, err := r.pubsubClient.CreateTopic(ctx, "sample_topic")
+	// if err != nil {
+	// 	fmt.Println("エラーだおん")
+	// 	return nil, err
+	// }
+
+	t := r.pubsubClient.Topic("sample_topic")
+	result := t.Publish(ctx, &pubsub.Message{
+		Data: []byte("Message ああああああ"),
 	})
+	id, err := result.Get(ctx)
 	if err != nil {
+		fmt.Println("エラーだ")
 		return nil, err
 	}
-	return &model.CreateUserPayload{
-		User:      res.User,
-		TokenPair: res.TokenPair,
-	}, nil
+	fmt.Println("published id=", id)
+	sub := r.pubsubClient.Subscription("sample_topic")
+	cctx, cancel := context.WithCancel(ctx)
+	err = sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
+		fmt.Printf("Got message: %q\n", string(msg.Data))
+		msg.Ack()
+		cancel()
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Receive: %w", err)
+	}
+	fmt.Println("終了")
+	return nil, fmt.Errorf("おワーリ")
+
+	// res, err := r.authClient.CreateUser(ctx, &auth_grpc.CreateUserReq{
+	// 	Email:    input.Email,
+	// 	Password: input.Password,
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return &model.CreateUserPayload{
+	// 	User:      res.User,
+	// 	TokenPair: res.TokenPair,
+	// }, nil
 }
 
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.UpdateUserPayload, error) {
