@@ -64,6 +64,3 @@ exec:
 
 logs:
 	docker logs -f --tail 100 $(PJT_NAME)_$(SVC)_1
-
-rmvol:
-	docker-compose -f $(DC_FILE) down -v
