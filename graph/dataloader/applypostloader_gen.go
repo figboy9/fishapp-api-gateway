@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
 )
 
 // ApplyPostLoaderConfig captures the config to create a new ApplyPostLoader
 type ApplyPostLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []int64) ([][]*post_grpc.ApplyPost, []error)
+	Fetch func(keys []int64) ([][]*pb.ApplyPost, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewApplyPostLoader(config ApplyPostLoaderConfig) *ApplyPostLoader {
 // ApplyPostLoader batches and caches requests
 type ApplyPostLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []int64) ([][]*post_grpc.ApplyPost, []error)
+	fetch func(keys []int64) ([][]*pb.ApplyPost, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type ApplyPostLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[int64][]*post_grpc.ApplyPost
+	cache map[int64][]*pb.ApplyPost
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type ApplyPostLoader struct {
 
 type applyPostLoaderBatch struct {
 	keys    []int64
-	data    [][]*post_grpc.ApplyPost
+	data    [][]*pb.ApplyPost
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a ApplyPost by key, batching and caching will be applied automatically
-func (l *ApplyPostLoader) Load(key int64) ([]*post_grpc.ApplyPost, error) {
+func (l *ApplyPostLoader) Load(key int64) ([]*pb.ApplyPost, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a ApplyPost.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ApplyPostLoader) LoadThunk(key int64) func() ([]*post_grpc.ApplyPost, error) {
+func (l *ApplyPostLoader) LoadThunk(key int64) func() ([]*pb.ApplyPost, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() ([]*post_grpc.ApplyPost, error) {
+		return func() ([]*pb.ApplyPost, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *ApplyPostLoader) LoadThunk(key int64) func() ([]*post_grpc.ApplyPost, e
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() ([]*post_grpc.ApplyPost, error) {
+	return func() ([]*pb.ApplyPost, error) {
 		<-batch.done
 
-		var data []*post_grpc.ApplyPost
+		var data []*pb.ApplyPost
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *ApplyPostLoader) LoadThunk(key int64) func() ([]*post_grpc.ApplyPost, e
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *ApplyPostLoader) LoadAll(keys []int64) ([][]*post_grpc.ApplyPost, []error) {
-	results := make([]func() ([]*post_grpc.ApplyPost, error), len(keys))
+func (l *ApplyPostLoader) LoadAll(keys []int64) ([][]*pb.ApplyPost, []error) {
+	results := make([]func() ([]*pb.ApplyPost, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	applyPosts := make([][]*post_grpc.ApplyPost, len(keys))
+	applyPosts := make([][]*pb.ApplyPost, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		applyPosts[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *ApplyPostLoader) LoadAll(keys []int64) ([][]*post_grpc.ApplyPost, []err
 // LoadAllThunk returns a function that when called will block waiting for a ApplyPosts.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ApplyPostLoader) LoadAllThunk(keys []int64) func() ([][]*post_grpc.ApplyPost, []error) {
-	results := make([]func() ([]*post_grpc.ApplyPost, error), len(keys))
+func (l *ApplyPostLoader) LoadAllThunk(keys []int64) func() ([][]*pb.ApplyPost, []error) {
+	results := make([]func() ([]*pb.ApplyPost, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([][]*post_grpc.ApplyPost, []error) {
-		applyPosts := make([][]*post_grpc.ApplyPost, len(keys))
+	return func() ([][]*pb.ApplyPost, []error) {
+		applyPosts := make([][]*pb.ApplyPost, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			applyPosts[i], errors[i] = thunk()
@@ -149,13 +149,13 @@ func (l *ApplyPostLoader) LoadAllThunk(keys []int64) func() ([][]*post_grpc.Appl
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *ApplyPostLoader) Prime(key int64, value []*post_grpc.ApplyPost) bool {
+func (l *ApplyPostLoader) Prime(key int64, value []*pb.ApplyPost) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
 		// make a copy when writing to the cache, its easy to pass a pointer in from a loop var
 		// and end up with the whole cache pointing to the same value.
-		cpy := make([]*post_grpc.ApplyPost, len(value))
+		cpy := make([]*pb.ApplyPost, len(value))
 		copy(cpy, value)
 		l.unsafeSet(key, cpy)
 	}
@@ -170,9 +170,9 @@ func (l *ApplyPostLoader) Clear(key int64) {
 	l.mu.Unlock()
 }
 
-func (l *ApplyPostLoader) unsafeSet(key int64, value []*post_grpc.ApplyPost) {
+func (l *ApplyPostLoader) unsafeSet(key int64, value []*pb.ApplyPost) {
 	if l.cache == nil {
-		l.cache = map[int64][]*post_grpc.ApplyPost{}
+		l.cache = map[int64][]*pb.ApplyPost{}
 	}
 	l.cache[key] = value
 }

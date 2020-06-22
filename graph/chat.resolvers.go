@@ -11,176 +11,148 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/ezio1119/fishapp-api-gateway/graph/dataloader"
+	"github.com/ezio1119/fishapp-api-gateway/conf"
 	"github.com/ezio1119/fishapp-api-gateway/graph/generated"
+	"github.com/ezio1119/fishapp-api-gateway/graph/gqlerr"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/chat_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
 )
 
-func (r *memberResolver) Profile(ctx context.Context, obj *chat_grpc.Member) (*profile_grpc.Profile, error) {
-	p, err := dataloader.For(ctx).ProfileByUserID.Load(obj.UserId)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+func (r *memberResolver) User(ctx context.Context, obj *pb.Member) (*pb.User, error) {
+	return r.userClient.GetUser(ctx, &pb.GetUserReq{Id: obj.UserId})
 }
 
-func (r *messageResolver) Profile(ctx context.Context, obj *chat_grpc.Message) (*profile_grpc.Profile, error) {
-	p, err := dataloader.For(ctx).ProfileByUserID.Load(obj.UserId)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+func (r *messageResolver) User(ctx context.Context, obj *pb.Message) (*pb.User, error) {
+	return r.userClient.GetUser(ctx, &pb.GetUserReq{Id: obj.UserId})
 }
 
-func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (*model.CreateRoomPayload, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	res, err := r.chatClient.CreateRoom(ctx, &chat_grpc.CreateRoomReq{
-		PostId: input.PostID,
-		UserId: uID,
+func (r *messageResolver) Image(ctx context.Context, obj *pb.Message) (*pb.Image, error) {
+	res, err := r.imageClient.ListImagesByOwnerID(ctx, &pb.ListImagesByOwnerIDReq{
+		OwnerId:   obj.Id,
+		OwnerType: pb.OwnerType_MESSAGE,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &model.CreateRoomPayload{Room: res}, nil
-}
 
-func (r *mutationResolver) CreateMember(ctx context.Context, input model.CreateMemberInput) (*model.CreateMemberPayload, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
+	if len(res.Images) == 0 {
 		return nil, err
 	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	m, err := r.chatClient.CreateMember(ctx, &chat_grpc.CreateMemberReq{
-		RoomId: input.RoomID,
-		UserId: uID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &model.CreateMemberPayload{Member: m}, nil
-}
 
-func (r *mutationResolver) DeleteMember(ctx context.Context, input model.DeleteMemberInput) (*model.DeleteMemberPayload, error) {
-	panic(fmt.Errorf("not implemented"))
+	return res.Images[0], nil
 }
 
 func (r *mutationResolver) CreateMessage(ctx context.Context, input model.CreateMessageInput) (*model.CreateMessagePayload, error) {
+	if input.Image != nil && input.Body != nil || input.Image == nil && input.Body == nil {
+		return nil, gqlerr.UserInputError("invalid CreateMessageInput.Image, CreateMessageInput.Body: value must be set either image or body")
+	}
+
 	c, err := getClaimsFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	m, err := r.chatClient.CreateMessage(ctx, &chat_grpc.CreateMessageReq{
-		Body:   input.Body,
-		RoomId: input.RoomID,
-		UserId: uID,
-	})
+
+	var body string
+	if input.Body != nil {
+		body = *input.Body
+	}
+
+	req := &pb.CreateMessageReq{
+		Data: &pb.CreateMessageReq_Info{
+			Info: &pb.CreateMessageReqInfo{
+				Body:   body,
+				RoomId: input.RoomID,
+				UserId: uID,
+			},
+		},
+	}
+
+	stream, err := r.chatClient.CreateMessage(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	if err := stream.Send(req); err != nil {
+		return nil, err
+	}
+
+	if input.Image != nil {
+		for {
+			buf := make([]byte, conf.C.Sv.ChunkDataSize)
+			n, err := input.Image.File.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, gqlerr.InternalServerError("cannot read chunk to buffe: %s", err)
+			}
+
+			req = &pb.CreateMessageReq{
+				Data: &pb.CreateMessageReq_ImageChunk{
+					ImageChunk: buf[:n],
+				},
+			}
+
+			if stream.Send(req); err != nil {
+				return nil, gqlerr.InternalServerError("cannot read chunk to buffe: %s", err)
+			}
+		}
+	}
+
+	m, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.CreateMessagePayload{Message: m}, nil
 }
 
-func (r *queryResolver) Room(ctx context.Context, postID int64) (*chat_grpc.Room, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	return r.chatClient.GetRoom(ctx, &chat_grpc.GetRoomReq{PostId: postID, UserId: uID})
+func (r *queryResolver) Room(ctx context.Context, postID int64) (*pb.Room, error) {
+	return r.chatClient.GetRoom(ctx, &pb.GetRoomReq{GetRoom: &pb.GetRoomReq_PostId{PostId: postID}})
 }
 
-func (r *roomResolver) Post(ctx context.Context, obj *chat_grpc.Room) (*post_grpc.Post, error) {
-	return r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: obj.PostId})
-}
-
-func (r *roomResolver) Messages(ctx context.Context, obj *chat_grpc.Room) ([]*chat_grpc.Message, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	res, err := r.chatClient.ListMessages(ctx, &chat_grpc.ListMessagesReq{RoomId: obj.Id, UserId: uID})
-	if err != nil {
-		return nil, err
-	}
-	return res.Messages, nil
-}
-
-func (r *roomResolver) Members(ctx context.Context, obj *chat_grpc.Room) ([]*chat_grpc.Member, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	res, err := r.chatClient.ListMembers(ctx, &chat_grpc.ListMembersReq{RoomId: obj.Id, UserId: uID})
-	if err != nil {
-		return nil, err
-	}
-	return res.Members, nil
+func (r *roomResolver) Post(ctx context.Context, obj *pb.Room) (*pb.Post, error) {
+	return r.postClient.GetPost(ctx, &pb.GetPostReq{Id: obj.PostId})
 }
 
 func (r *subscriptionResolver) MessageAdded(ctx context.Context, input model.MessageAddedInput) (<-chan *model.MessageAddedPayload, error) {
 	fmt.Println(runtime.NumGoroutine())
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := r.chatClient.GetMember(ctx, &chat_grpc.GetMemberReq{RoomId: input.RoomID, UserId: uID}); err != nil {
-		return nil, err
-	}
 	gqlChan := make(chan *model.MessageAddedPayload)
+	// go func() {
+	// 	<-ctx.Done()
+	// 	close(gqlChan)
+	// }()
+
 	go func() {
-		<-ctx.Done()
-		close(gqlChan)
-	}()
-	go func() {
-		stream, err := r.chatClient.StreamMessage(ctx, &chat_grpc.StreamMessageReq{RoomId: input.RoomID, UserId: uID})
+		stream, err := r.chatClient.StreamMessage(ctx, &pb.StreamMessageReq{RoomId: input.RoomID})
 		if err != nil {
 			log.Println(err)
 			return
 		}
+
 		for {
 			m, err := stream.Recv()
 			if err == io.EOF {
 				return
 			}
+
 			if err != nil {
-				log.Println(err)
+				fmt.Println(err)
 				return
 			}
+
+			fmt.Printf("msg: %#v\n", m)
+
 			gqlChan <- &model.MessageAddedPayload{Message: m}
 		}
+
 	}()
+
 	return gqlChan, nil
 }
 

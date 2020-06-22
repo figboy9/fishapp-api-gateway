@@ -10,15 +10,16 @@ import (
 
 type config struct {
 	Sv struct {
-		Timeout int64
-		Port    string
-		Debug   bool
+		Timeout       int64
+		Port          string
+		Debug         bool
+		ChunkDataSize int
 	}
 	API struct {
-		PostURL    string `mapstructure:"post_url"`
-		AuthURL    string `mapstructure:"auth_url"`
-		ProfileURL string `mapstructure:"profile_url"`
-		ChatURL    string `mapstructure:"chat_url"`
+		PostURL  string `mapstructure:"post_url"`
+		UserURL  string `mapstructure:"user_url"`
+		ChatURL  string `mapstructure:"chat_url"`
+		ImageURL string `mapstructure:"image_url"`
 	}
 	Auth struct {
 		PubJwtkey string `mapstructure:"pub_jwtkey"`
@@ -26,6 +27,11 @@ type config struct {
 	Graphql struct {
 		Playground string
 		Endpoint   string
+	}
+	Nats struct {
+		URL        string
+		ClusterID  string
+		QueueGroup string
 	}
 }
 

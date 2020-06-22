@@ -3,11 +3,9 @@
 package model
 
 import (
-	"github.com/ezio1119/fishapp-api-gateway/grpc/auth_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/chat_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type CreateApplyPostInput struct {
@@ -15,67 +13,57 @@ type CreateApplyPostInput struct {
 }
 
 type CreateApplyPostPayload struct {
-	ApplyPost *post_grpc.ApplyPost `json:"applyPost"`
-}
-
-type CreateMemberInput struct {
-	RoomID int64 `json:"roomId"`
-}
-
-type CreateMemberPayload struct {
-	Member *chat_grpc.Member `json:"member"`
+	ApplyPost *pb.ApplyPost `json:"applyPost"`
 }
 
 type CreateMessageInput struct {
-	Body   string `json:"body"`
-	RoomID int64  `json:"roomId"`
+	Body   *string         `json:"body"`
+	RoomID int64           `json:"roomId"`
+	Image  *graphql.Upload `json:"image"`
 }
 
 type CreateMessagePayload struct {
-	Message *chat_grpc.Message `json:"message"`
+	Message *pb.Message `json:"message"`
 }
 
 type CreatePostInput struct {
-	Title             string              `json:"title"`
-	Content           string              `json:"content"`
-	FishingSpotTypeID int64               `json:"fishingSpotTypeId"`
-	FishTypeIds       []int64             `json:"fishTypeIds"`
-	PrefectureID      int64               `json:"prefectureId"`
-	MeetingPlaceID    string              `json:"meetingPlaceId"`
-	MeetingAt         timestamp.Timestamp `json:"meetingAt"`
-	MaxApply          int64               `json:"maxApply"`
+	Title             string                `json:"title"`
+	Content           string                `json:"content"`
+	FishingSpotTypeID int64                 `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64               `json:"fishTypeIds"`
+	PrefectureID      int64                 `json:"prefectureId"`
+	MeetingPlaceID    string                `json:"meetingPlaceId"`
+	MeetingAt         timestamppb.Timestamp `json:"meetingAt"`
+	MaxApply          int64                 `json:"maxApply"`
+	Images            []*graphql.Upload     `json:"images"`
 }
 
 type CreatePostPayload struct {
-	Post *post_grpc.Post `json:"post"`
+	Post   *pb.Post `json:"post"`
+	SagaID string   `json:"sagaId"`
 }
 
-type CreateProfileInput struct {
-	Name         string           `json:"name"`
-	Introduction string           `json:"introduction"`
-	Sex          profile_grpc.Sex `json:"sex"`
+type CreatePostResultInput struct {
+	SagaID string `json:"sagaId"`
 }
 
-type CreateProfilePayload struct {
-	Profile *profile_grpc.Profile `json:"profile"`
-}
-
-type CreateRoomInput struct {
-	PostID int64 `json:"postId"`
-}
-
-type CreateRoomPayload struct {
-	Room *chat_grpc.Room `json:"room"`
+type CreatePostResultPayload struct {
+	Post  *pb.Post `json:"post"`
+	Error *string  `json:"error"`
 }
 
 type CreateUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email        string          `json:"email"`
+	Password     string          `json:"password"`
+	Name         string          `json:"name"`
+	Sex          pb.Sex          `json:"sex"`
+	Introduction string          `json:"introduction"`
+	Image        *graphql.Upload `json:"image"`
 }
 
 type CreateUserPayload struct {
-	User      *auth_grpc.User      `json:"user"`
-	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
+	User      *pb.User      `json:"user"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
 }
 
 type DeleteApplyPostInput struct {
@@ -83,14 +71,6 @@ type DeleteApplyPostInput struct {
 }
 
 type DeleteApplyPostPayload struct {
-	Success bool `json:"success"`
-}
-
-type DeleteMemberInput struct {
-	RoomID int64 `json:"roomId"`
-}
-
-type DeleteMemberPayload struct {
 	Success bool `json:"success"`
 }
 
@@ -108,8 +88,8 @@ type LoginInput struct {
 }
 
 type LoginPayload struct {
-	User      *auth_grpc.User      `json:"user"`
-	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
+	User      *pb.User      `json:"user"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
 }
 
 type LogoutPayload struct {
@@ -121,7 +101,7 @@ type MessageAddedInput struct {
 }
 
 type MessageAddedPayload struct {
-	Message *chat_grpc.Message `json:"message"`
+	Message *pb.Message `json:"message"`
 }
 
 type PageInfo struct {
@@ -130,57 +110,60 @@ type PageInfo struct {
 }
 
 type PostConnection struct {
-	PageInfo *PageInfo         `json:"pageInfo"`
-	Nodes    []*post_grpc.Post `json:"nodes"`
+	PageInfo *PageInfo  `json:"pageInfo"`
+	Nodes    []*pb.Post `json:"nodes"`
 }
 
 type PostsInput struct {
-	PrefectureID      *int64                                 `json:"prefectureId"`
-	FishingSpotTypeID *int64                                 `json:"fishingSpotTypeId"`
-	FishTypeIds       []int64                                `json:"fishTypeIds"`
-	MeetingAtFrom     *timestamp.Timestamp                   `json:"meetingAtFrom"`
-	MeetingAtTo       *timestamp.Timestamp                   `json:"meetingAtTo"`
-	CanApply          *bool                                  `json:"canApply"`
-	OrderBy           *post_grpc.ListPostsReq_Filter_OrderBy `json:"orderBy"`
-	SortBy            *post_grpc.ListPostsReq_Filter_SortBy  `json:"sortBy"`
-	UserID            *int64                                 `json:"userId"`
+	PrefectureID      *int64                          `json:"prefectureId"`
+	FishingSpotTypeID *int64                          `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64                         `json:"fishTypeIds"`
+	MeetingAtFrom     *timestamppb.Timestamp          `json:"meetingAtFrom"`
+	MeetingAtTo       *timestamppb.Timestamp          `json:"meetingAtTo"`
+	CanApply          *bool                           `json:"canApply"`
+	OrderBy           *pb.ListPostsReq_Filter_OrderBy `json:"orderBy"`
+	SortBy            *pb.ListPostsReq_Filter_SortBy  `json:"sortBy"`
+	UserID            *int64                          `json:"userId"`
 }
 
 type RefreshIDTokenPayload struct {
-	TokenPair *auth_grpc.TokenPair `json:"tokenPair"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
+}
+
+type UpdatePasswordInput struct {
+	OldPassword string `json:"oldPassword"`
+	NewPassword string `json:"newPassword"`
+}
+
+type UpdatePasswordPayload struct {
+	Success bool `json:"success"`
 }
 
 type UpdatePostInput struct {
-	ID                int64               `json:"id"`
-	Title             string              `json:"title"`
-	Content           string              `json:"content"`
-	FishingSpotTypeID int64               `json:"fishingSpotTypeId"`
-	FishTypeIds       []int64             `json:"fishTypeIds"`
-	PrefectureID      int64               `json:"prefectureId"`
-	MeetingPlaceID    string              `json:"meetingPlaceId"`
-	MeetingAt         timestamp.Timestamp `json:"meetingAt"`
-	MaxApply          int64               `json:"maxApply"`
+	ID                int64                 `json:"id"`
+	Title             string                `json:"title"`
+	Content           string                `json:"content"`
+	FishingSpotTypeID int64                 `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64               `json:"fishTypeIds"`
+	PrefectureID      int64                 `json:"prefectureId"`
+	MeetingPlaceID    string                `json:"meetingPlaceId"`
+	MeetingAt         timestamppb.Timestamp `json:"meetingAt"`
+	MaxApply          int64                 `json:"maxApply"`
+	ImageIdsToDelete  []int64               `json:"imageIdsToDelete"`
+	Images            []*graphql.Upload     `json:"images"`
 }
 
 type UpdatePostPayload struct {
-	Post *post_grpc.Post `json:"post"`
-}
-
-type UpdateProfileInput struct {
-	Name         string `json:"name"`
-	Introduction string `json:"introduction"`
-}
-
-type UpdateProfilePayload struct {
-	Profile *profile_grpc.Profile `json:"profile"`
+	Post *pb.Post `json:"post"`
 }
 
 type UpdateUserInput struct {
-	Email       string `json:"email"`
-	OldPassword string `json:"oldPassword"`
-	Password    string `json:"password"`
+	Email        string          `json:"email"`
+	Name         string          `json:"name"`
+	Introduction string          `json:"introduction"`
+	Image        *graphql.Upload `json:"image"`
 }
 
 type UpdateUserPayload struct {
-	User *auth_grpc.User `json:"user"`
+	User *pb.User `json:"user"`
 }

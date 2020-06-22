@@ -5,22 +5,27 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"log"
 	"strconv"
 
+	"github.com/ezio1119/fishapp-api-gateway/conf"
 	"github.com/ezio1119/fishapp-api-gateway/graph/dataloader"
 	"github.com/ezio1119/fishapp-api-gateway/graph/generated"
 	"github.com/ezio1119/fishapp-api-gateway/graph/gqlerr"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/post_grpc"
-	"github.com/ezio1119/fishapp-api-gateway/grpc/profile_grpc"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
+	stan "github.com/nats-io/stan.go"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (r *applyPostResolver) Profile(ctx context.Context, obj *post_grpc.ApplyPost) (*profile_grpc.Profile, error) {
-	return dataloader.For(ctx).ProfileByUserID.Load(obj.UserId)
+func (r *applyPostResolver) User(ctx context.Context, obj *pb.ApplyPost) (*pb.User, error) {
+	return r.userClient.GetUser(ctx, &pb.GetUserReq{Id: obj.UserId})
 }
 
-func (r *applyPostResolver) Post(ctx context.Context, obj *post_grpc.ApplyPost) (*post_grpc.Post, error) {
-	return r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: obj.PostId})
+func (r *applyPostResolver) Post(ctx context.Context, obj *pb.ApplyPost) (*pb.Post, error) {
+	return r.postClient.GetPost(ctx, &pb.GetPostReq{Id: obj.PostId})
 }
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*model.CreatePostPayload, error) {
@@ -33,75 +38,144 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 		return nil, err
 	}
 
-	p, err := r.postClient.CreatePost(ctx, &post_grpc.CreatePostReq{
-		Title:             input.Title,
-		Content:           input.Content,
-		FishingSpotTypeId: input.FishingSpotTypeID,
-		FishTypeIds:       input.FishTypeIds,
-		PrefectureId:      input.PrefectureID,
-		MeetingPlaceId:    input.MeetingPlaceID,
-		MeetingAt:         &input.MeetingAt,
-		MaxApply:          input.MaxApply,
-		UserId:            uID,
-	})
+	req := &pb.CreatePostReq{
+		Data: &pb.CreatePostReq_Info{
+			Info: &pb.CreatePostReqInfo{
+				Title:             input.Title,
+				Content:           input.Content,
+				FishingSpotTypeId: input.FishingSpotTypeID,
+				FishTypeIds:       input.FishTypeIds,
+				PrefectureId:      input.PrefectureID,
+				MeetingPlaceId:    input.MeetingPlaceID,
+				MeetingAt:         &input.MeetingAt,
+				MaxApply:          input.MaxApply,
+				UserId:            uID,
+			}},
+	}
+
+	stream, err := r.postClient.CreatePost(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &model.CreatePostPayload{Post: p}, nil
+
+	if err := stream.Send(req); err != nil {
+		return nil, err
+	}
+
+	for n, image := range input.Images {
+		for {
+			buf := make([]byte, conf.C.Sv.ChunkDataSize)
+			n, err := image.File.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, gqlerr.InternalServerError("cannot read chunk to buffe: %s", err)
+			}
+
+			req := &pb.CreatePostReq{
+				Data: &pb.CreatePostReq_ImageChunk{
+					ImageChunk: buf[:n],
+				},
+			}
+
+			if stream.Send(req); err != nil {
+				return nil, fmt.Errorf("cannot send chunk to server: %w", err)
+			}
+		}
+
+		if len(input.Images) != n+1 {
+
+			req = &pb.CreatePostReq{
+				Data: &pb.CreatePostReq_NextImageSignal{NextImageSignal: true},
+			}
+
+			if err := stream.Send(req); err != nil {
+				log.Fatal("cannot send chunk to server: ", err)
+			}
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.CreatePostPayload{Post: res.Post, SagaID: res.SagaId}, nil
 }
 
 func (r *mutationResolver) UpdatePost(ctx context.Context, input model.UpdatePostInput) (*model.UpdatePostPayload, error) {
-	c, err := getClaimsFromCtx(ctx)
+	req := &pb.UpdatePostReq{
+		Data: &pb.UpdatePostReq_Info{
+			Info: &pb.UpdatePostReqInfo{
+				Id:                input.ID,
+				Title:             input.Title,
+				Content:           input.Content,
+				FishingSpotTypeId: input.FishingSpotTypeID,
+				FishTypeIds:       input.FishTypeIds,
+				PrefectureId:      input.PrefectureID,
+				MeetingPlaceId:    input.MeetingPlaceID,
+				MeetingAt:         &input.MeetingAt,
+				MaxApply:          input.MaxApply,
+				ImageIdsToDelete:  input.ImageIdsToDelete,
+			}},
+	}
+
+	stream, err := r.postClient.UpdatePost(ctx)
 	if err != nil {
 		return nil, err
 	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
+
+	if err := stream.Send(req); err != nil {
+		return nil, err
+	}
+
+	for n, image := range input.Images {
+		for {
+			buf := make([]byte, conf.C.Sv.ChunkDataSize)
+			n, err := image.File.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, gqlerr.InternalServerError("cannot read chunk to buffe: %s", err)
+			}
+
+			req = &pb.UpdatePostReq{
+				Data: &pb.UpdatePostReq_ImageChunk{
+					ImageChunk: buf[:n],
+				},
+			}
+
+			if stream.Send(req); err != nil {
+				return nil, fmt.Errorf("cannot send chunk to server: %w", err)
+			}
+		}
+
+		if len(input.Images) != n+1 { // まだイメージがあるときにNextImageSignalを送る
+			req = &pb.UpdatePostReq{
+				Data: &pb.UpdatePostReq_NextImageSignal{NextImageSignal: true},
+			}
+
+			if err := stream.Send(req); err != nil {
+				log.Fatal("cannot send chunk to server: ", err)
+			}
+		}
+	}
+
+	p, err := stream.CloseAndRecv()
 	if err != nil {
 		return nil, err
 	}
-	res, err := r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: input.ID})
-	if err != nil {
-		return nil, err
-	}
-	if res.UserId != uID {
-		return nil, gqlerr.ForbiddenError("user_id=%d does not have permission to update post_id=%d", uID, input.ID)
-	}
-	p, err := r.postClient.UpdatePost(ctx, &post_grpc.UpdatePostReq{
-		Id:                input.ID,
-		Title:             input.Title,
-		Content:           input.Content,
-		FishingSpotTypeId: input.FishingSpotTypeID,
-		FishTypeIds:       input.FishTypeIds,
-		PrefectureId:      input.PrefectureID,
-		MeetingPlaceId:    input.MeetingPlaceID,
-		MeetingAt:         &input.MeetingAt,
-		MaxApply:          input.MaxApply,
-	})
-	if err != nil {
-		return nil, err
-	}
+
 	return &model.UpdatePostPayload{Post: p}, nil
 }
 
 func (r *mutationResolver) DeletePost(ctx context.Context, input model.DeletePostInput) (*model.DeletePostPayload, error) {
-	c, err := getClaimsFromCtx(ctx)
-	if err != nil {
+	if _, err := r.postClient.DeletePost(ctx, &pb.DeletePostReq{Id: input.ID}); err != nil {
 		return nil, err
 	}
-	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	res, err := r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: input.ID})
-	if err != nil {
-		return nil, err
-	}
-	if res.UserId != uID {
-		return nil, gqlerr.ForbiddenError("user_id=%d does not have permission to delete post_id=%d", uID, input.ID)
-	}
-	if _, err := r.postClient.DeletePost(ctx, &post_grpc.DeletePostReq{Id: input.ID}); err != nil {
-		return nil, err
-	}
+
 	return &model.DeletePostPayload{Success: true}, nil
 }
 
@@ -110,24 +184,29 @@ func (r *mutationResolver) CreateApplyPost(ctx context.Context, input model.Crea
 	if err != nil {
 		return nil, err
 	}
+
 	uID, err := strconv.ParseInt(c.User.ID, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	res, err := r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: input.PostID})
+
+	res, err := r.postClient.GetPost(ctx, &pb.GetPostReq{Id: input.PostID})
 	if err != nil {
 		return nil, err
 	}
+
 	if res.UserId == uID {
 		return nil, gqlerr.ForbiddenError("cannot apply your own post")
 	}
-	a, err := r.postClient.CreateApplyPost(ctx, &post_grpc.CreateApplyPostReq{
+
+	a, err := r.postClient.CreateApplyPost(ctx, &pb.CreateApplyPostReq{
 		PostId: input.PostID,
 		UserId: uID,
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return &model.CreateApplyPostPayload{ApplyPost: a}, nil
 }
 
@@ -140,34 +219,46 @@ func (r *mutationResolver) DeleteApplyPost(ctx context.Context, input model.Dele
 	if err != nil {
 		return nil, err
 	}
-	res, err := r.postClient.GetApplyPost(ctx, &post_grpc.GetApplyPostReq{Id: input.ID})
+	res, err := r.postClient.GetApplyPost(ctx, &pb.GetApplyPostReq{Id: input.ID})
 	if err != nil {
 		return nil, err
 	}
 	if res.UserId != uID {
 		return nil, gqlerr.ForbiddenError("user_id=%d does not have permission to delete apply_post_id=%d: %s", uID, input.ID, err.Error())
 	}
-	if _, err := r.postClient.DeleteApplyPost(ctx, &post_grpc.DeleteApplyPostReq{Id: input.ID}); err != nil {
+	if _, err := r.postClient.DeleteApplyPost(ctx, &pb.DeleteApplyPostReq{Id: input.ID}); err != nil {
 		return nil, err
 	}
 	return &model.DeleteApplyPostPayload{Success: true}, nil
 }
 
-func (r *postResolver) ApplyPosts(ctx context.Context, obj *post_grpc.Post) ([]*post_grpc.ApplyPost, error) {
+func (r *postResolver) ApplyPosts(ctx context.Context, obj *pb.Post) ([]*pb.ApplyPost, error) {
 	return dataloader.For(ctx).ApplyPostsByPostIDs.Load(obj.Id)
 }
 
-func (r *postResolver) Profile(ctx context.Context, obj *post_grpc.Post) (*profile_grpc.Profile, error) {
-	return dataloader.For(ctx).ProfileByUserID.Load(obj.UserId)
+func (r *postResolver) Images(ctx context.Context, obj *pb.Post) ([]*pb.Image, error) {
+	res, err := r.imageClient.ListImagesByOwnerID(ctx, &pb.ListImagesByOwnerIDReq{
+		OwnerId:   obj.Id,
+		OwnerType: pb.OwnerType_POST,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Images, nil
+}
+
+func (r *postResolver) User(ctx context.Context, obj *pb.Post) (*pb.User, error) {
+	return r.userClient.GetUser(ctx, &pb.GetUserReq{Id: obj.UserId})
 }
 
 func (r *queryResolver) Posts(ctx context.Context, first *int64, after *string, input model.PostsInput) (*model.PostConnection, error) {
-	req := &post_grpc.ListPostsReq{Filter: &post_grpc.ListPostsReq_Filter{
+	req := &pb.ListPostsReq{Filter: &pb.ListPostsReq_Filter{
 		MeetingAtFrom: input.MeetingAtFrom,
 		MeetingAtTo:   input.MeetingAtTo,
 		FishTypeIds:   input.FishTypeIds,
 	}}
-	// grpcはnilを受け入れないのでnilチェック
+	// protobufはnilを受け入れないのでnilチェック
 	if input.PrefectureID != nil {
 		req.Filter.PrefectureId = *input.PrefectureID
 	}
@@ -208,8 +299,87 @@ func (r *queryResolver) Posts(ctx context.Context, first *int64, after *string, 
 	return c, nil
 }
 
-func (r *queryResolver) Post(ctx context.Context, id int64) (*post_grpc.Post, error) {
-	return r.postClient.GetPost(ctx, &post_grpc.GetPostReq{Id: id})
+func (r *queryResolver) Post(ctx context.Context, id int64) (*pb.Post, error) {
+	return r.postClient.GetPost(ctx, &pb.GetPostReq{Id: id})
+}
+
+func (r *subscriptionResolver) CreatePostResult(ctx context.Context, input model.CreatePostResultInput) (<-chan *model.CreatePostResultPayload, error) {
+	resChan := make(chan *model.CreatePostResultPayload)
+	go func() {
+		<-ctx.Done()
+		close(resChan)
+	}()
+
+	_, err := r.natsConn.QueueSubscribe("create.post.result", conf.C.Nats.QueueGroup, func(m *stan.Msg) {
+
+		select {
+		case <-ctx.Done():
+			if err := m.Sub.Close(); err != nil {
+				log.Println(err)
+			}
+			return
+		default:
+		}
+
+		e := &pb.Event{}
+		if err := protojson.Unmarshal(m.MsgProto.Data, e); err != nil {
+			err := err.Error()
+			resChan <- &model.CreatePostResultPayload{Error: &err}
+			return
+		}
+
+		switch e.EventType {
+		case "post.approved":
+
+			data := &pb.PostApproved{}
+
+			if err := protojson.Unmarshal(e.EventData, data); err != nil {
+				err := err.Error()
+				resChan <- &model.CreatePostResultPayload{Error: &err}
+				return
+			}
+
+			log.Printf("recieved event post.approved input sagaid: %s\nrecieved sagaid: %s\n", input.SagaID, data.SagaId)
+
+			if data.SagaId != input.SagaID {
+				log.Println("wrong saga id")
+				return
+			}
+
+			resChan <- &model.CreatePostResultPayload{Post: data.Post}
+
+		case "post.rejected":
+
+			data := &pb.PostRejected{}
+
+			if err := protojson.Unmarshal(e.EventData, data); err != nil {
+				err := err.Error()
+				resChan <- &model.CreatePostResultPayload{Error: &err}
+				return
+			}
+
+			log.Printf("recieved event post.rejected input sagaid: %s\nrecieved sagaid: %s\n", input.SagaID, data.SagaId)
+
+			if data.SagaId != input.SagaID {
+				log.Println("wrong saga id")
+				return
+			}
+
+			resChan <- &model.CreatePostResultPayload{Error: &data.ErrorMessage}
+		}
+
+		if err := m.Ack(); err != nil {
+			err := err.Error()
+			resChan <- &model.CreatePostResultPayload{Error: &err}
+		}
+
+	}, stan.SetManualAckMode(), stan.DurableName(conf.C.Nats.QueueGroup))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resChan, nil
 }
 
 // ApplyPost returns generated.ApplyPostResolver implementation.

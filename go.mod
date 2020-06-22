@@ -7,8 +7,13 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/envoyproxy/protoc-gen-validate v0.3.0
-	github.com/golang/protobuf v1.3.5
-	github.com/spf13/viper v1.6.2
+	github.com/golang/protobuf v1.4.2
+	github.com/google/martian v2.1.0+incompatible
+	github.com/google/uuid v1.1.1
+	github.com/nats-io/stan.go v0.6.0
+	github.com/rs/cors v1.6.0
+	github.com/spf13/viper v1.7.0
 	github.com/vektah/gqlparser/v2 v2.0.1
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.29.1
+	google.golang.org/protobuf v1.24.0
 )

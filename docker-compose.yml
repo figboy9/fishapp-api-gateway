@@ -1,13 +1,20 @@
-version: '3'
+version: '3.4'
 services:
   api-gateway:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      target: dev
     volumes:
       - .:/app
     environment:
       TZ: Asia/Tokyo
+    # command: sh
     ports:
       - "8080:8080"
     tty: true
+
+
+networks:
+  default:
+    external:
+      name: fishapp-net
