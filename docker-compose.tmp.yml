@@ -1,0 +1,16 @@
+version: '3.4'
+services:
+  api-gateway:
+    build:
+      context: .
+      target: prod
+    environment:
+      TZ: Asia/Tokyo
+    # command: sh
+    ports:
+      - "8080:8080"
+    tty: true
+networks:
+  default:
+    external:
+      name: fishapp-net

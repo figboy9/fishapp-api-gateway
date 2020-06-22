@@ -9,7 +9,7 @@ IMAGE_URL = image:50051
 POST_URL = post:50051
 CHAT_URL = chat:50051
 USER_URL = image:50051
-NATS_URL = nats-streaming:50051
+NATS_URL = nats-streaming:4223
 
 createnet:
 	docker network create $(NET)
