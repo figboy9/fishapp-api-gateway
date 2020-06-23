@@ -243,7 +243,7 @@ func (r *userResolver) Image(ctx context.Context, obj *pb.User) (*pb.Image, erro
 		return nil, err
 	}
 
-	if len(res.Images) == 0 { 
+	if len(res.Images) == 0 {
 		return nil, err
 	}
 
@@ -254,4 +254,3 @@ func (r *userResolver) Image(ctx context.Context, obj *pb.User) (*pb.Image, erro
 func (r *resolver) User() generated.UserResolver { return &userResolver{r} }
 
 type userResolver struct{ *resolver }
-

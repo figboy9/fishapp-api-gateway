@@ -1227,7 +1227,7 @@ extend type Mutation {
 }
 
 extend type Subscription {
-  createPostResult(input: CreatePostResultInput!): CreatePostResultPayload!
+  createPostResult(input: CreatePostResultInput!): CreatePostResultPayload! @isAuthenticated
 }
 
 extend type Post {
@@ -4837,8 +4837,28 @@ func (ec *executionContext) _Subscription_createPostResult(ctx context.Context, 
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().CreatePostResult(rctx, args["input"].(model.CreatePostResultInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Subscription().CreatePostResult(rctx, args["input"].(model.CreatePostResultInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(<-chan *model.CreatePostResultPayload); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be <-chan *github.com/ezio1119/fishapp-api-gateway/graph/model.CreatePostResultPayload`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
