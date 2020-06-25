@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -68,10 +67,6 @@ func main() {
 					gqlHandler,
 					postC,
 				))))
-
-	http.HandleFunc("/healthy", func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprintln(w, "healthy")
-	})
 
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }
