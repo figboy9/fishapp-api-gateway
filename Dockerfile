@@ -26,10 +26,11 @@ FROM alpine AS prod
 WORKDIR /app
 RUN apk add --no-cache tzdata curl
 
-COPY --from=builder /src/main .
-COPY --from=builder /src/conf/conf.yml /app/conf/conf.yml
-COPY --from=builder /src/healthcheck.sh /healthcheck.sh
+COPY healthcheck.sh /
 
 RUN chmod +x /healthcheck.sh
+
+COPY --from=builder /src/main .
+COPY --from=builder /src/conf/conf.yml /app/conf/conf.yml
 
 CMD ["./main"]
