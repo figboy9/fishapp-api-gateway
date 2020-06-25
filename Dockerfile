@@ -24,9 +24,12 @@ RUN go build -o main .
 # 本番用
 FROM alpine AS prod
 WORKDIR /app
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata curl
 
 COPY --from=builder /src/main .
 COPY --from=builder /src/conf/conf.yml /app/conf/conf.yml
+COPY --from=builder /src/healthcheck.sh /healthcheck.sh
+
+RUN chmod +x /healthcheck.sh
 
 CMD ["./main"]
