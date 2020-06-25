@@ -24,6 +24,7 @@ RUN go build -o main .
 # 本番用
 FROM alpine AS prod
 WORKDIR /app
+# curlはhealthcheckをプローブでするために必要
 RUN apk add --no-cache tzdata curl
 
 COPY healthcheck.sh /
