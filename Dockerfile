@@ -6,6 +6,8 @@ WORKDIR /app
 RUN apk add --no-cache tzdata git libc-dev gcc && \
     go get github.com/pilu/fresh
 
+COPY . .
+
 CMD ["fresh"]
 
 # コンパイラ用

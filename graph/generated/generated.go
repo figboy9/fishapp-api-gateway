@@ -182,6 +182,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		CurrentUser func(childComplexity int) int
+		HealthCheck func(childComplexity int) int
 		Post        func(childComplexity int, id int64) int
 		Posts       func(childComplexity int, first *int64, after *string, input model.PostsInput) int
 		Room        func(childComplexity int, postID int64) int
@@ -269,6 +270,7 @@ type PostResolver interface {
 }
 type QueryResolver interface {
 	Room(ctx context.Context, postID int64) (*pb.Room, error)
+	HealthCheck(ctx context.Context) (bool, error)
 	Posts(ctx context.Context, first *int64, after *string, input model.PostsInput) (*model.PostConnection, error)
 	Post(ctx context.Context, id int64) (*pb.Post, error)
 	CurrentUser(ctx context.Context) (*pb.User, error)
@@ -828,6 +830,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
 
+	case "Query.healthCheck":
+		if e.complexity.Query.HealthCheck == nil {
+			break
+		}
+
+		return e.complexity.Query.HealthCheck(childComplexity), true
+
 	case "Query.post":
 		if e.complexity.Query.Post == nil {
 			break
@@ -1192,6 +1201,9 @@ input MessageAddedInput {
 
 type MessageAddedPayload {
   message: Message!
+}`, BuiltIn: false},
+	&ast.Source{Name: "schema/api-gateway/healthcheck.graphql", Input: `extend type Query {
+  healthCheck: Boolean!
 }`, BuiltIn: false},
 	&ast.Source{Name: "schema/api-gateway/image.graphql", Input: `
 extend type Image {
@@ -4274,6 +4286,40 @@ func (ec *executionContext) _Query_room(ctx context.Context, field graphql.Colle
 	res := resTmp.(*pb.Room)
 	fc.Result = res
 	return ec.marshalNRoom2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐRoom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_healthCheck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HealthCheck(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7715,6 +7761,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_room(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "healthCheck":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_healthCheck(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
