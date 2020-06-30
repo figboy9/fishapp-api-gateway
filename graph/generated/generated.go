@@ -11,13 +11,15 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/ezio1119/fishapp-api-gateway/graph/model"
+	"github.com/ezio1119/fishapp-api-gateway/graph/scalar"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -38,49 +40,49 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ApplyPost() ApplyPostResolver
+	Member() MemberResolver
+	Message() MessageResolver
 	Mutation() MutationResolver
+	Post() PostResolver
 	Query() QueryResolver
+	Room() RoomResolver
 	Subscription() SubscriptionResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
-	IsAuthenticated func(ctx context.Context, obj interface{}, next graphql.Resolver, authAPI bool) (res interface{}, err error)
+	IsApplyPostOwner func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	IsAuthenticated  func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	IsMember         func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	IsPostOwner      func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
-	AddMemberChatRoomPayload struct {
-		Member func(childComplexity int) int
-	}
-
 	ApplyPost struct {
 		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		PostID    func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Post      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
-	}
-
-	ChatRoom struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		PostID    func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
 	}
 
 	CreateApplyPostPayload struct {
 		ApplyPost func(childComplexity int) int
 	}
 
-	CreateChatRoomPayload struct {
-		Room func(childComplexity int) int
+	CreateMessagePayload struct {
+		Message func(childComplexity int) int
 	}
 
 	CreatePostPayload struct {
-		Post func(childComplexity int) int
+		Post   func(childComplexity int) int
+		SagaID func(childComplexity int) int
 	}
 
-	CreateProfilePayload struct {
-		Profile func(childComplexity int) int
+	CreatePostResultPayload struct {
+		Error func(childComplexity int) int
+		Post  func(childComplexity int) int
 	}
 
 	CreateUserPayload struct {
@@ -96,12 +98,13 @@ type ComplexityRoot struct {
 		Success func(childComplexity int) int
 	}
 
-	DeleteProfilePayload struct {
-		Success func(childComplexity int) int
-	}
-
-	DeleteUserPayload struct {
-		Success func(childComplexity int) int
+	Image struct {
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		OwnerId   func(childComplexity int) int
+		OwnerType func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	LoginPayload struct {
@@ -113,28 +116,41 @@ type ComplexityRoot struct {
 		Success func(childComplexity int) int
 	}
 
+	Member struct {
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		RoomId    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
+	Message struct {
+		Body      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Image     func(childComplexity int) int
+		RoomId    func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
 	MessageAddedPayload struct {
 		Message func(childComplexity int) int
 	}
 
 	Mutation struct {
-		AddMemberChatRoom   func(childComplexity int, input model.AddMemberChatRoomInput) int
-		CreateApplyPost     func(childComplexity int, input model.CreateApplyPostInput) int
-		CreateChatRoom      func(childComplexity int, input model.CreateChatRoomInput) int
-		CreatePost          func(childComplexity int, input model.CreatePostInput) int
-		CreateProfile       func(childComplexity int, input model.CreateProfileInput) int
-		CreateUser          func(childComplexity int, input model.CreateUserInput) int
-		DeleteApplyPost     func(childComplexity int, input model.DeleteApplyPostInput) int
-		DeletePost          func(childComplexity int, input model.DeletePostInput) int
-		DeleteProfile       func(childComplexity int) int
-		DeleteUser          func(childComplexity int) int
-		Login               func(childComplexity int, input model.LoginInput) int
-		Logout              func(childComplexity int) int
-		RefreshIDToken      func(childComplexity int) int
-		SendMessageChatRoom func(childComplexity int, input model.SendMessageChatRoomInput) int
-		UpdatePost          func(childComplexity int, input model.UpdatePostInput) int
-		UpdateProfile       func(childComplexity int, input model.UpdateProfileInput) int
-		UpdateUser          func(childComplexity int, input model.UpdateUserInput) int
+		CreateApplyPost func(childComplexity int, input model.CreateApplyPostInput) int
+		CreateMessage   func(childComplexity int, input model.CreateMessageInput) int
+		CreatePost      func(childComplexity int, input model.CreatePostInput) int
+		CreateUser      func(childComplexity int, input model.CreateUserInput) int
+		DeleteApplyPost func(childComplexity int, input model.DeleteApplyPostInput) int
+		DeletePost      func(childComplexity int, input model.DeletePostInput) int
+		Login           func(childComplexity int, input model.LoginInput) int
+		Logout          func(childComplexity int) int
+		RefreshIDToken  func(childComplexity int) int
+		UpdatePassword  func(childComplexity int, input model.UpdatePasswordInput) int
+		UpdatePost      func(childComplexity int, input model.UpdatePostInput) int
+		UpdateUser      func(childComplexity int, input model.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -143,12 +159,20 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Title     func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
+		ApplyPosts        func(childComplexity int) int
+		Content           func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		FishTypeIds       func(childComplexity int) int
+		FishingSpotTypeId func(childComplexity int) int
+		Id                func(childComplexity int) int
+		Images            func(childComplexity int) int
+		MaxApply          func(childComplexity int) int
+		MeetingAt         func(childComplexity int) int
+		MeetingPlaceId    func(childComplexity int) int
+		PrefectureId      func(childComplexity int) int
+		Title             func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+		User              func(childComplexity int) int
 	}
 
 	PostConnection struct {
@@ -156,61 +180,44 @@ type ComplexityRoot struct {
 		PageInfo func(childComplexity int) int
 	}
 
-	Profile struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
-	}
-
 	Query struct {
-		Post    func(childComplexity int, id int64) int
-		Posts   func(childComplexity int, first *int64, after *string, input model.PostsInput) int
-		Profile func(childComplexity int, userID int64) int
-		User    func(childComplexity int, id int64) int
+		CurrentUser func(childComplexity int) int
+		HealthCheck func(childComplexity int) int
+		Post        func(childComplexity int, id int64) int
+		Posts       func(childComplexity int, first *int64, after *string, input model.PostsInput) int
+		Room        func(childComplexity int, postID int64) int
+		User        func(childComplexity int, id int64) int
 	}
 
 	RefreshIDTokenPayload struct {
 		TokenPair func(childComplexity int) int
 	}
 
-	RoomMember struct {
+	Room struct {
 		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		RoomID    func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Members   func(childComplexity int) int
+		Messages  func(childComplexity int) int
+		Post      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
-	}
-
-	RoomMessage struct {
-		Body      func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		RoomID    func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		UserID    func(childComplexity int) int
-	}
-
-	SendMessageChatRoomPayload struct {
-		Message func(childComplexity int) int
 	}
 
 	Subscription struct {
-		MessageAdded func(childComplexity int, input model.MessageAddedInput) int
+		CreatePostResult func(childComplexity int, input model.CreatePostResultInput) int
+		MessageAdded     func(childComplexity int, input model.MessageAddedInput) int
 	}
 
 	TokenPair struct {
-		IDToken      func(childComplexity int) int
+		IdToken      func(childComplexity int) int
 		RefreshToken func(childComplexity int) int
+	}
+
+	UpdatePasswordPayload struct {
+		Success func(childComplexity int) int
 	}
 
 	UpdatePostPayload struct {
 		Post func(childComplexity int) int
-	}
-
-	UpdateProfilePayload struct {
-		Profile func(childComplexity int) int
 	}
 
 	UpdateUserPayload struct {
@@ -218,40 +225,68 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		CreatedAt func(childComplexity int) int
-		Email     func(childComplexity int) int
-		ID        func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		ApplyPosts   func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		Email        func(childComplexity int) int
+		Id           func(childComplexity int) int
+		Image        func(childComplexity int) int
+		Introduction func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Posts        func(childComplexity int) int
+		Sex          func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
 	}
 }
 
+type ApplyPostResolver interface {
+	User(ctx context.Context, obj *pb.ApplyPost) (*pb.User, error)
+	Post(ctx context.Context, obj *pb.ApplyPost) (*pb.Post, error)
+}
+type MemberResolver interface {
+	User(ctx context.Context, obj *pb.Member) (*pb.User, error)
+}
+type MessageResolver interface {
+	User(ctx context.Context, obj *pb.Message) (*pb.User, error)
+	Image(ctx context.Context, obj *pb.Message) (*pb.Image, error)
+}
 type MutationResolver interface {
-	CreateChatRoom(ctx context.Context, input model.CreateChatRoomInput) (*model.CreateChatRoomPayload, error)
-	AddMemberChatRoom(ctx context.Context, input model.AddMemberChatRoomInput) (*model.AddMemberChatRoomPayload, error)
-	SendMessageChatRoom(ctx context.Context, input model.SendMessageChatRoomInput) (*model.SendMessageChatRoomPayload, error)
+	CreateMessage(ctx context.Context, input model.CreateMessageInput) (*model.CreateMessagePayload, error)
 	CreatePost(ctx context.Context, input model.CreatePostInput) (*model.CreatePostPayload, error)
 	UpdatePost(ctx context.Context, input model.UpdatePostInput) (*model.UpdatePostPayload, error)
 	DeletePost(ctx context.Context, input model.DeletePostInput) (*model.DeletePostPayload, error)
 	CreateApplyPost(ctx context.Context, input model.CreateApplyPostInput) (*model.CreateApplyPostPayload, error)
 	DeleteApplyPost(ctx context.Context, input model.DeleteApplyPostInput) (*model.DeleteApplyPostPayload, error)
-	CreateProfile(ctx context.Context, input model.CreateProfileInput) (*model.CreateProfilePayload, error)
-	DeleteProfile(ctx context.Context) (*model.DeleteProfilePayload, error)
-	UpdateProfile(ctx context.Context, input model.UpdateProfileInput) (*model.UpdateProfilePayload, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error)
-	DeleteUser(ctx context.Context) (*model.DeleteUserPayload, error)
 	UpdateUser(ctx context.Context, input model.UpdateUserInput) (*model.UpdateUserPayload, error)
+	UpdatePassword(ctx context.Context, input model.UpdatePasswordInput) (*model.UpdatePasswordPayload, error)
 	RefreshIDToken(ctx context.Context) (*model.RefreshIDTokenPayload, error)
 	Login(ctx context.Context, input model.LoginInput) (*model.LoginPayload, error)
 	Logout(ctx context.Context) (*model.LogoutPayload, error)
 }
+type PostResolver interface {
+	ApplyPosts(ctx context.Context, obj *pb.Post) ([]*pb.ApplyPost, error)
+	Images(ctx context.Context, obj *pb.Post) ([]*pb.Image, error)
+	User(ctx context.Context, obj *pb.Post) (*pb.User, error)
+}
 type QueryResolver interface {
+	Room(ctx context.Context, postID int64) (*pb.Room, error)
+	HealthCheck(ctx context.Context) (bool, error)
 	Posts(ctx context.Context, first *int64, after *string, input model.PostsInput) (*model.PostConnection, error)
-	Post(ctx context.Context, id int64) (*model.Post, error)
-	Profile(ctx context.Context, userID int64) (*model.Profile, error)
-	User(ctx context.Context, id int64) (*model.User, error)
+	Post(ctx context.Context, id int64) (*pb.Post, error)
+	CurrentUser(ctx context.Context) (*pb.User, error)
+	User(ctx context.Context, id int64) (*pb.User, error)
+}
+type RoomResolver interface {
+	Post(ctx context.Context, obj *pb.Room) (*pb.Post, error)
 }
 type SubscriptionResolver interface {
 	MessageAdded(ctx context.Context, input model.MessageAddedInput) (<-chan *model.MessageAddedPayload, error)
+	CreatePostResult(ctx context.Context, input model.CreatePostResultInput) (<-chan *model.CreatePostResultPayload, error)
+}
+type UserResolver interface {
+	Posts(ctx context.Context, obj *pb.User) ([]*pb.Post, error)
+	ApplyPosts(ctx context.Context, obj *pb.User) ([]*pb.ApplyPost, error)
+	Image(ctx context.Context, obj *pb.User) (*pb.Image, error)
 }
 
 type executableSchema struct {
@@ -269,13 +304,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "AddMemberChatRoomPayload.member":
-		if e.complexity.AddMemberChatRoomPayload.Member == nil {
-			break
-		}
-
-		return e.complexity.AddMemberChatRoomPayload.Member(childComplexity), true
-
 	case "ApplyPost.createdAt":
 		if e.complexity.ApplyPost.CreatedAt == nil {
 			break
@@ -284,18 +312,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.ApplyPost.CreatedAt(childComplexity), true
 
 	case "ApplyPost.id":
-		if e.complexity.ApplyPost.ID == nil {
+		if e.complexity.ApplyPost.Id == nil {
 			break
 		}
 
-		return e.complexity.ApplyPost.ID(childComplexity), true
+		return e.complexity.ApplyPost.Id(childComplexity), true
 
-	case "ApplyPost.postId":
-		if e.complexity.ApplyPost.PostID == nil {
+	case "ApplyPost.post":
+		if e.complexity.ApplyPost.Post == nil {
 			break
 		}
 
-		return e.complexity.ApplyPost.PostID(childComplexity), true
+		return e.complexity.ApplyPost.Post(childComplexity), true
 
 	case "ApplyPost.updatedAt":
 		if e.complexity.ApplyPost.UpdatedAt == nil {
@@ -304,40 +332,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ApplyPost.UpdatedAt(childComplexity), true
 
-	case "ApplyPost.userId":
-		if e.complexity.ApplyPost.UserID == nil {
+	case "ApplyPost.user":
+		if e.complexity.ApplyPost.User == nil {
 			break
 		}
 
-		return e.complexity.ApplyPost.UserID(childComplexity), true
-
-	case "ChatRoom.createdAt":
-		if e.complexity.ChatRoom.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.ChatRoom.CreatedAt(childComplexity), true
-
-	case "ChatRoom.id":
-		if e.complexity.ChatRoom.ID == nil {
-			break
-		}
-
-		return e.complexity.ChatRoom.ID(childComplexity), true
-
-	case "ChatRoom.postId":
-		if e.complexity.ChatRoom.PostID == nil {
-			break
-		}
-
-		return e.complexity.ChatRoom.PostID(childComplexity), true
-
-	case "ChatRoom.updatedAt":
-		if e.complexity.ChatRoom.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.ChatRoom.UpdatedAt(childComplexity), true
+		return e.complexity.ApplyPost.User(childComplexity), true
 
 	case "CreateApplyPostPayload.applyPost":
 		if e.complexity.CreateApplyPostPayload.ApplyPost == nil {
@@ -346,12 +346,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CreateApplyPostPayload.ApplyPost(childComplexity), true
 
-	case "CreateChatRoomPayload.room":
-		if e.complexity.CreateChatRoomPayload.Room == nil {
+	case "CreateMessagePayload.message":
+		if e.complexity.CreateMessagePayload.Message == nil {
 			break
 		}
 
-		return e.complexity.CreateChatRoomPayload.Room(childComplexity), true
+		return e.complexity.CreateMessagePayload.Message(childComplexity), true
 
 	case "CreatePostPayload.post":
 		if e.complexity.CreatePostPayload.Post == nil {
@@ -360,12 +360,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CreatePostPayload.Post(childComplexity), true
 
-	case "CreateProfilePayload.profile":
-		if e.complexity.CreateProfilePayload.Profile == nil {
+	case "CreatePostPayload.sagaId":
+		if e.complexity.CreatePostPayload.SagaID == nil {
 			break
 		}
 
-		return e.complexity.CreateProfilePayload.Profile(childComplexity), true
+		return e.complexity.CreatePostPayload.SagaID(childComplexity), true
+
+	case "CreatePostResultPayload.error":
+		if e.complexity.CreatePostResultPayload.Error == nil {
+			break
+		}
+
+		return e.complexity.CreatePostResultPayload.Error(childComplexity), true
+
+	case "CreatePostResultPayload.post":
+		if e.complexity.CreatePostResultPayload.Post == nil {
+			break
+		}
+
+		return e.complexity.CreatePostResultPayload.Post(childComplexity), true
 
 	case "CreateUserPayload.tokenPair":
 		if e.complexity.CreateUserPayload.TokenPair == nil {
@@ -395,19 +409,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DeletePostPayload.Success(childComplexity), true
 
-	case "DeleteProfilePayload.success":
-		if e.complexity.DeleteProfilePayload.Success == nil {
+	case "Image.createdAt":
+		if e.complexity.Image.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.DeleteProfilePayload.Success(childComplexity), true
+		return e.complexity.Image.CreatedAt(childComplexity), true
 
-	case "DeleteUserPayload.success":
-		if e.complexity.DeleteUserPayload.Success == nil {
+	case "Image.id":
+		if e.complexity.Image.Id == nil {
 			break
 		}
 
-		return e.complexity.DeleteUserPayload.Success(childComplexity), true
+		return e.complexity.Image.Id(childComplexity), true
+
+	case "Image.name":
+		if e.complexity.Image.Name == nil {
+			break
+		}
+
+		return e.complexity.Image.Name(childComplexity), true
+
+	case "Image.ownerId":
+		if e.complexity.Image.OwnerId == nil {
+			break
+		}
+
+		return e.complexity.Image.OwnerId(childComplexity), true
+
+	case "Image.ownerType":
+		if e.complexity.Image.OwnerType == nil {
+			break
+		}
+
+		return e.complexity.Image.OwnerType(childComplexity), true
+
+	case "Image.updatedAt":
+		if e.complexity.Image.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Image.UpdatedAt(childComplexity), true
 
 	case "LoginPayload.tokenPair":
 		if e.complexity.LoginPayload.TokenPair == nil {
@@ -430,24 +472,96 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LogoutPayload.Success(childComplexity), true
 
+	case "Member.createdAt":
+		if e.complexity.Member.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Member.CreatedAt(childComplexity), true
+
+	case "Member.id":
+		if e.complexity.Member.Id == nil {
+			break
+		}
+
+		return e.complexity.Member.Id(childComplexity), true
+
+	case "Member.roomId":
+		if e.complexity.Member.RoomId == nil {
+			break
+		}
+
+		return e.complexity.Member.RoomId(childComplexity), true
+
+	case "Member.updatedAt":
+		if e.complexity.Member.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Member.UpdatedAt(childComplexity), true
+
+	case "Member.user":
+		if e.complexity.Member.User == nil {
+			break
+		}
+
+		return e.complexity.Member.User(childComplexity), true
+
+	case "Message.body":
+		if e.complexity.Message.Body == nil {
+			break
+		}
+
+		return e.complexity.Message.Body(childComplexity), true
+
+	case "Message.createdAt":
+		if e.complexity.Message.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Message.CreatedAt(childComplexity), true
+
+	case "Message.id":
+		if e.complexity.Message.Id == nil {
+			break
+		}
+
+		return e.complexity.Message.Id(childComplexity), true
+
+	case "Message.image":
+		if e.complexity.Message.Image == nil {
+			break
+		}
+
+		return e.complexity.Message.Image(childComplexity), true
+
+	case "Message.roomId":
+		if e.complexity.Message.RoomId == nil {
+			break
+		}
+
+		return e.complexity.Message.RoomId(childComplexity), true
+
+	case "Message.updatedAt":
+		if e.complexity.Message.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Message.UpdatedAt(childComplexity), true
+
+	case "Message.user":
+		if e.complexity.Message.User == nil {
+			break
+		}
+
+		return e.complexity.Message.User(childComplexity), true
+
 	case "MessageAddedPayload.message":
 		if e.complexity.MessageAddedPayload.Message == nil {
 			break
 		}
 
 		return e.complexity.MessageAddedPayload.Message(childComplexity), true
-
-	case "Mutation.addMemberChatRoom":
-		if e.complexity.Mutation.AddMemberChatRoom == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_addMemberChatRoom_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AddMemberChatRoom(childComplexity, args["input"].(model.AddMemberChatRoomInput)), true
 
 	case "Mutation.createApplyPost":
 		if e.complexity.Mutation.CreateApplyPost == nil {
@@ -461,17 +575,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateApplyPost(childComplexity, args["input"].(model.CreateApplyPostInput)), true
 
-	case "Mutation.createChatRoom":
-		if e.complexity.Mutation.CreateChatRoom == nil {
+	case "Mutation.createMessage":
+		if e.complexity.Mutation.CreateMessage == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createChatRoom_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createMessage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateChatRoom(childComplexity, args["input"].(model.CreateChatRoomInput)), true
+		return e.complexity.Mutation.CreateMessage(childComplexity, args["input"].(model.CreateMessageInput)), true
 
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
@@ -484,18 +598,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreatePost(childComplexity, args["input"].(model.CreatePostInput)), true
-
-	case "Mutation.createProfile":
-		if e.complexity.Mutation.CreateProfile == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createProfile_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateProfile(childComplexity, args["input"].(model.CreateProfileInput)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -533,20 +635,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeletePost(childComplexity, args["input"].(model.DeletePostInput)), true
 
-	case "Mutation.deleteProfile":
-		if e.complexity.Mutation.DeleteProfile == nil {
-			break
-		}
-
-		return e.complexity.Mutation.DeleteProfile(childComplexity), true
-
-	case "Mutation.deleteUser":
-		if e.complexity.Mutation.DeleteUser == nil {
-			break
-		}
-
-		return e.complexity.Mutation.DeleteUser(childComplexity), true
-
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -573,17 +661,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RefreshIDToken(childComplexity), true
 
-	case "Mutation.sendMessageChatRoom":
-		if e.complexity.Mutation.SendMessageChatRoom == nil {
+	case "Mutation.updatePassword":
+		if e.complexity.Mutation.UpdatePassword == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_sendMessageChatRoom_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updatePassword_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendMessageChatRoom(childComplexity, args["input"].(model.SendMessageChatRoomInput)), true
+		return e.complexity.Mutation.UpdatePassword(childComplexity, args["input"].(model.UpdatePasswordInput)), true
 
 	case "Mutation.updatePost":
 		if e.complexity.Mutation.UpdatePost == nil {
@@ -596,18 +684,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdatePost(childComplexity, args["input"].(model.UpdatePostInput)), true
-
-	case "Mutation.updateProfile":
-		if e.complexity.Mutation.UpdateProfile == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_updateProfile_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateProfile(childComplexity, args["input"].(model.UpdateProfileInput)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -635,6 +711,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.HasNextPage(childComplexity), true
 
+	case "Post.applyPosts":
+		if e.complexity.Post.ApplyPosts == nil {
+			break
+		}
+
+		return e.complexity.Post.ApplyPosts(childComplexity), true
+
 	case "Post.content":
 		if e.complexity.Post.Content == nil {
 			break
@@ -649,12 +732,61 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.CreatedAt(childComplexity), true
 
-	case "Post.id":
-		if e.complexity.Post.ID == nil {
+	case "Post.fishTypeIds":
+		if e.complexity.Post.FishTypeIds == nil {
 			break
 		}
 
-		return e.complexity.Post.ID(childComplexity), true
+		return e.complexity.Post.FishTypeIds(childComplexity), true
+
+	case "Post.fishingSpotTypeId":
+		if e.complexity.Post.FishingSpotTypeId == nil {
+			break
+		}
+
+		return e.complexity.Post.FishingSpotTypeId(childComplexity), true
+
+	case "Post.id":
+		if e.complexity.Post.Id == nil {
+			break
+		}
+
+		return e.complexity.Post.Id(childComplexity), true
+
+	case "Post.images":
+		if e.complexity.Post.Images == nil {
+			break
+		}
+
+		return e.complexity.Post.Images(childComplexity), true
+
+	case "Post.maxApply":
+		if e.complexity.Post.MaxApply == nil {
+			break
+		}
+
+		return e.complexity.Post.MaxApply(childComplexity), true
+
+	case "Post.meetingAt":
+		if e.complexity.Post.MeetingAt == nil {
+			break
+		}
+
+		return e.complexity.Post.MeetingAt(childComplexity), true
+
+	case "Post.meetingPlaceId":
+		if e.complexity.Post.MeetingPlaceId == nil {
+			break
+		}
+
+		return e.complexity.Post.MeetingPlaceId(childComplexity), true
+
+	case "Post.prefectureId":
+		if e.complexity.Post.PrefectureId == nil {
+			break
+		}
+
+		return e.complexity.Post.PrefectureId(childComplexity), true
 
 	case "Post.title":
 		if e.complexity.Post.Title == nil {
@@ -670,12 +802,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.UpdatedAt(childComplexity), true
 
-	case "Post.userId":
-		if e.complexity.Post.UserID == nil {
+	case "Post.user":
+		if e.complexity.Post.User == nil {
 			break
 		}
 
-		return e.complexity.Post.UserID(childComplexity), true
+		return e.complexity.Post.User(childComplexity), true
 
 	case "PostConnection.nodes":
 		if e.complexity.PostConnection.Nodes == nil {
@@ -691,40 +823,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostConnection.PageInfo(childComplexity), true
 
-	case "Profile.created_at":
-		if e.complexity.Profile.CreatedAt == nil {
+	case "Query.currentUser":
+		if e.complexity.Query.CurrentUser == nil {
 			break
 		}
 
-		return e.complexity.Profile.CreatedAt(childComplexity), true
+		return e.complexity.Query.CurrentUser(childComplexity), true
 
-	case "Profile.id":
-		if e.complexity.Profile.ID == nil {
+	case "Query.healthCheck":
+		if e.complexity.Query.HealthCheck == nil {
 			break
 		}
 
-		return e.complexity.Profile.ID(childComplexity), true
-
-	case "Profile.name":
-		if e.complexity.Profile.Name == nil {
-			break
-		}
-
-		return e.complexity.Profile.Name(childComplexity), true
-
-	case "Profile.updated_at":
-		if e.complexity.Profile.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.Profile.UpdatedAt(childComplexity), true
-
-	case "Profile.userId":
-		if e.complexity.Profile.UserID == nil {
-			break
-		}
-
-		return e.complexity.Profile.UserID(childComplexity), true
+		return e.complexity.Query.HealthCheck(childComplexity), true
 
 	case "Query.post":
 		if e.complexity.Query.Post == nil {
@@ -750,17 +861,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Posts(childComplexity, args["first"].(*int64), args["after"].(*string), args["input"].(model.PostsInput)), true
 
-	case "Query.profile":
-		if e.complexity.Query.Profile == nil {
+	case "Query.room":
+		if e.complexity.Query.Room == nil {
 			break
 		}
 
-		args, err := ec.field_Query_profile_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_room_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Profile(childComplexity, args["userId"].(int64)), true
+		return e.complexity.Query.Room(childComplexity, args["post_id"].(int64)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -781,89 +892,59 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RefreshIDTokenPayload.TokenPair(childComplexity), true
 
-	case "RoomMember.createdAt":
-		if e.complexity.RoomMember.CreatedAt == nil {
+	case "Room.createdAt":
+		if e.complexity.Room.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.RoomMember.CreatedAt(childComplexity), true
+		return e.complexity.Room.CreatedAt(childComplexity), true
 
-	case "RoomMember.id":
-		if e.complexity.RoomMember.ID == nil {
+	case "Room.id":
+		if e.complexity.Room.Id == nil {
 			break
 		}
 
-		return e.complexity.RoomMember.ID(childComplexity), true
+		return e.complexity.Room.Id(childComplexity), true
 
-	case "RoomMember.roomId":
-		if e.complexity.RoomMember.RoomID == nil {
+	case "Room.members":
+		if e.complexity.Room.Members == nil {
 			break
 		}
 
-		return e.complexity.RoomMember.RoomID(childComplexity), true
+		return e.complexity.Room.Members(childComplexity), true
 
-	case "RoomMember.updatedAt":
-		if e.complexity.RoomMember.UpdatedAt == nil {
+	case "Room.messages":
+		if e.complexity.Room.Messages == nil {
 			break
 		}
 
-		return e.complexity.RoomMember.UpdatedAt(childComplexity), true
+		return e.complexity.Room.Messages(childComplexity), true
 
-	case "RoomMember.userId":
-		if e.complexity.RoomMember.UserID == nil {
+	case "Room.post":
+		if e.complexity.Room.Post == nil {
 			break
 		}
 
-		return e.complexity.RoomMember.UserID(childComplexity), true
+		return e.complexity.Room.Post(childComplexity), true
 
-	case "RoomMessage.body":
-		if e.complexity.RoomMessage.Body == nil {
+	case "Room.updatedAt":
+		if e.complexity.Room.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.RoomMessage.Body(childComplexity), true
+		return e.complexity.Room.UpdatedAt(childComplexity), true
 
-	case "RoomMessage.createdAt":
-		if e.complexity.RoomMessage.CreatedAt == nil {
+	case "Subscription.createPostResult":
+		if e.complexity.Subscription.CreatePostResult == nil {
 			break
 		}
 
-		return e.complexity.RoomMessage.CreatedAt(childComplexity), true
-
-	case "RoomMessage.id":
-		if e.complexity.RoomMessage.ID == nil {
-			break
+		args, err := ec.field_Subscription_createPostResult_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.RoomMessage.ID(childComplexity), true
-
-	case "RoomMessage.roomId":
-		if e.complexity.RoomMessage.RoomID == nil {
-			break
-		}
-
-		return e.complexity.RoomMessage.RoomID(childComplexity), true
-
-	case "RoomMessage.updatedAt":
-		if e.complexity.RoomMessage.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.RoomMessage.UpdatedAt(childComplexity), true
-
-	case "RoomMessage.userId":
-		if e.complexity.RoomMessage.UserID == nil {
-			break
-		}
-
-		return e.complexity.RoomMessage.UserID(childComplexity), true
-
-	case "SendMessageChatRoomPayload.message":
-		if e.complexity.SendMessageChatRoomPayload.Message == nil {
-			break
-		}
-
-		return e.complexity.SendMessageChatRoomPayload.Message(childComplexity), true
+		return e.complexity.Subscription.CreatePostResult(childComplexity, args["input"].(model.CreatePostResultInput)), true
 
 	case "Subscription.messageAdded":
 		if e.complexity.Subscription.MessageAdded == nil {
@@ -878,11 +959,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.Subscription.MessageAdded(childComplexity, args["input"].(model.MessageAddedInput)), true
 
 	case "TokenPair.idToken":
-		if e.complexity.TokenPair.IDToken == nil {
+		if e.complexity.TokenPair.IdToken == nil {
 			break
 		}
 
-		return e.complexity.TokenPair.IDToken(childComplexity), true
+		return e.complexity.TokenPair.IdToken(childComplexity), true
 
 	case "TokenPair.refreshToken":
 		if e.complexity.TokenPair.RefreshToken == nil {
@@ -891,6 +972,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TokenPair.RefreshToken(childComplexity), true
 
+	case "UpdatePasswordPayload.success":
+		if e.complexity.UpdatePasswordPayload.Success == nil {
+			break
+		}
+
+		return e.complexity.UpdatePasswordPayload.Success(childComplexity), true
+
 	case "UpdatePostPayload.post":
 		if e.complexity.UpdatePostPayload.Post == nil {
 			break
@@ -898,19 +986,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdatePostPayload.Post(childComplexity), true
 
-	case "UpdateProfilePayload.profile":
-		if e.complexity.UpdateProfilePayload.Profile == nil {
-			break
-		}
-
-		return e.complexity.UpdateProfilePayload.Profile(childComplexity), true
-
 	case "UpdateUserPayload.user":
 		if e.complexity.UpdateUserPayload.User == nil {
 			break
 		}
 
 		return e.complexity.UpdateUserPayload.User(childComplexity), true
+
+	case "User.applyPosts":
+		if e.complexity.User.ApplyPosts == nil {
+			break
+		}
+
+		return e.complexity.User.ApplyPosts(childComplexity), true
 
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
@@ -927,11 +1015,46 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.User.Email(childComplexity), true
 
 	case "User.id":
-		if e.complexity.User.ID == nil {
+		if e.complexity.User.Id == nil {
 			break
 		}
 
-		return e.complexity.User.ID(childComplexity), true
+		return e.complexity.User.Id(childComplexity), true
+
+	case "User.image":
+		if e.complexity.User.Image == nil {
+			break
+		}
+
+		return e.complexity.User.Image(childComplexity), true
+
+	case "User.introduction":
+		if e.complexity.User.Introduction == nil {
+			break
+		}
+
+		return e.complexity.User.Introduction(childComplexity), true
+
+	case "User.name":
+		if e.complexity.User.Name == nil {
+			break
+		}
+
+		return e.complexity.User.Name(childComplexity), true
+
+	case "User.posts":
+		if e.complexity.User.Posts == nil {
+			break
+		}
+
+		return e.complexity.User.Posts(childComplexity), true
+
+	case "User.sex":
+		if e.complexity.User.Sex == nil {
+			break
+		}
+
+		return e.complexity.User.Sex(childComplexity), true
 
 	case "User.updatedAt":
 		if e.complexity.User.UpdatedAt == nil {
@@ -1021,73 +1144,86 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "schema/api-gateway/chat.graphql", Input: `extend type Mutation {
-  createChatRoom(input: CreateChatRoomInput!): CreateChatRoomPayload! @isAuthenticated
-  addMemberChatRoom(input: AddMemberChatRoomInput!): AddMemberChatRoomPayload! @isAuthenticated 
-  sendMessageChatRoom(input: SendMessageChatRoomInput!): SendMessageChatRoomPayload! @isAuthenticated
+	&ast.Source{Name: "schema/api-gateway/chat.graphql", Input: `directive @isMember on FIELD_DEFINITION
+
+extend type Query {
+  room(post_id: ID!): Room! @isMember @isAuthenticated # isAuthenticatedが先に発火
+}
+
+extend type Mutation {
+  createMessage(input: CreateMessageInput!): CreateMessagePayload! @isMember @isAuthenticated
 }
 
 extend type Subscription {
-  messageAdded(input: MessageAddedInput!): MessageAddedPayload! @isAuthenticated
+  messageAdded(input: MessageAddedInput!): MessageAddedPayload! @isMember @isAuthenticated
 }
 
-type ChatRoom {
-  id: ID!
-  postId: ID!
+extend type Room {
+  id: ID! 
+  post: Post!
+  messages: [Message!]
+  members: [Member!]!
   createdAt: Time!
   updatedAt: Time!
 }
 
-type RoomMember {
+type Member {
   id: ID!
   roomId: ID!
-  userId: ID!
+  user: User!
   createdAt: Time!
   updatedAt: Time!
 }
 
-type RoomMessage {
+type Message {
   id: ID!
-  body: String!
+  body: String
   roomId: ID!
-  userId: ID!
+  user: User!
+  image: Image
   createdAt: Time!
   updatedAt: Time!
 }
 
-input CreateChatRoomInput {
-  postId: ID!
-}
-
-type CreateChatRoomPayload{
-  room: ChatRoom!
-}
-
-input AddMemberChatRoomInput {
+input CreateMessageInput {
+  body: String
   roomId: ID!
+  image: Upload
 }
 
-type AddMemberChatRoomPayload {
-  member: RoomMember!
-}
-
-input SendMessageChatRoomInput {
-  body: String!
-  roomId: ID!
-}
-
-type SendMessageChatRoomPayload {
-  message: RoomMessage!
+type CreateMessagePayload {
+  message: Message!
 }
 
 input MessageAddedInput {
-  roomIds: [ID!]!
+  roomId: ID!
 }
 
 type MessageAddedPayload {
-  message: RoomMessage!
+  message: Message!
 }`, BuiltIn: false},
-	&ast.Source{Name: "schema/api-gateway/post.graphql", Input: `scalar Time
+	&ast.Source{Name: "schema/api-gateway/healthcheck.graphql", Input: `extend type Query {
+  healthCheck: Boolean!
+}`, BuiltIn: false},
+	&ast.Source{Name: "schema/api-gateway/image.graphql", Input: `
+extend type Image {
+  id: ID!
+  name: String!
+  ownerId: Int!
+  ownerType: OwnerType!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+enum OwnerType {
+  POST
+  USER
+  MESSAGE
+}`, BuiltIn: false},
+	&ast.Source{Name: "schema/api-gateway/post.graphql", Input: `directive @isPostOwner on FIELD_DEFINITION
+directive @isApplyPostOwner on FIELD_DEFINITION
+scalar Upload
+scalar Time
 
 extend type Query {
   posts(first: Int, after: String, input: PostsInput!): PostConnection! # Relay connection
@@ -1096,31 +1232,61 @@ extend type Query {
 
 extend type Mutation {
   createPost(input: CreatePostInput!): CreatePostPayload! @isAuthenticated
-  updatePost(input: UpdatePostInput!): UpdatePostPayload! @isAuthenticated
-  deletePost(input: DeletePostInput!): DeletePostPayload! @isAuthenticated
+  updatePost(input: UpdatePostInput!): UpdatePostPayload! @isPostOwner @isAuthenticated
+  deletePost(input: DeletePostInput!): DeletePostPayload! @isPostOwner @isAuthenticated
   createApplyPost(input: CreateApplyPostInput!): CreateApplyPostPayload! @isAuthenticated
-  deleteApplyPost(input: DeleteApplyPostInput!): DeleteApplyPostPayload! @isAuthenticated
+  deleteApplyPost(input: DeleteApplyPostInput!): DeleteApplyPostPayload! @isApplyPostOwner @isAuthenticated
+}
+
+extend type Subscription {
+  createPostResult(input: CreatePostResultInput!): CreatePostResultPayload! @isAuthenticated
 }
 
 extend type Post {
   id: ID!
   title: String!
   content: String!
-  userId: ID!
+  fishingSpotTypeId: ID! # 1: 陸っぱり, 2: 渓流釣り, 3: 釣り船, 4: 釣り堀
+  fishTypeIds: [ID!]!
+  prefectureId: ID!
+  meetingPlaceId: String!
+  meetingAt: Time!
+  applyPosts: [ApplyPost!]
+  images: [Image!]
+  user: User!
+  maxApply: Int!
   createdAt: Time!
   updatedAt: Time!
 }
 
-type ApplyPost {
+extend type ApplyPost {
   id: ID!
-  userId: ID!
-  postId: ID!
+  user: User!
+  post: Post!
   createdAt: Time!
   updatedAt: Time!
 }
 
 input PostsInput {
-  notImplement: String
+  prefectureId: ID
+  fishingSpotTypeId: ID
+  fishTypeIds: [ID!]
+  meetingAtFrom: Time
+  meetingAtTo: Time
+  canApply: Boolean
+  orderBy: PostOrderBy # デフォルトは DESC
+  sortBy: PostSortBy # デフォルトはCREATED_AT
+  userId: ID 
+}
+
+enum PostOrderBy {
+  DESC
+  ASC
+}
+
+enum PostSortBy {
+  CREATED_AT
+  MEETING_AT
 }
 
 extend type PageInfo {
@@ -1130,22 +1296,38 @@ extend type PageInfo {
 
 type PostConnection {
   pageInfo: PageInfo!
-  nodes: [Post!]
+  nodes: [Post]
 }
 
 input CreatePostInput {
   title: String!
   content: String!
+  fishingSpotTypeId: ID!
+  fishTypeIds: [ID!]!
+  prefectureId: ID! # 普通に選ばせる or Google Place API のレスポンスのadministrative_area_level_1と取ってきたIDを比較する
+  meetingPlaceId: String! # Google Place ID
+  meetingAt: Time!
+  maxApply: Int!
+  images: [Upload!]
 }
 
 type CreatePostPayload {
   post: Post!
+  sagaId: String!
 }
 
 input UpdatePostInput{
   id: ID!
   title: String!
   content: String!
+  fishingSpotTypeId: ID!
+  fishTypeIds: [ID!]!
+  prefectureId: ID!
+  meetingPlaceId: String!
+  meetingAt: Time!
+  maxApply: Int!
+  imageIdsToDelete: [Int!]
+  images: [Upload!]
 }
 
 type UpdatePostPayload {
@@ -1169,76 +1351,62 @@ type CreateApplyPostPayload {
 }
 
 input DeleteApplyPostInput {
-  applyPostId: ID!
+  id: ID!
 }
 
 type DeleteApplyPostPayload {
   success: Boolean!
+}
+
+input CreatePostResultInput {
+  sagaId: String!
+}
+
+type CreatePostResultPayload {
+  post: Post
+  error: String
 }`, BuiltIn: false},
-	&ast.Source{Name: "schema/api-gateway/profile.graphql", Input: `extend type Query {
-  profile(userId: ID!): Profile! 
-}
-
-extend type Mutation {
-  createProfile(input: CreateProfileInput!): CreateProfilePayload! @isAuthenticated
-  deleteProfile: DeleteProfilePayload! @isAuthenticated
-  updateProfile(input: UpdateProfileInput!): UpdateProfilePayload! @isAuthenticated
-}
-
-type Profile {
-  id: ID!
-  name: String!
-  userId: ID!
-  created_at: Time!
-  updated_at: Time!
-}
-
-input CreateProfileInput {
-  name: String!
-}
-
-type CreateProfilePayload {
-  profile: Profile!
-}
-
-type DeleteProfilePayload {
-  success: Boolean!
-}
-
-input UpdateProfileInput {
-  name: String!
-}
-
-type UpdateProfilePayload {
-  profile: Profile!
-}`, BuiltIn: false},
-	&ast.Source{Name: "schema/api-gateway/user.graphql", Input: `directive @isAuthenticated(
-  authAPI: Boolean! = false # Token is required when requesting authAPI
-) on FIELD_DEFINITION
-
+	&ast.Source{Name: "schema/api-gateway/user.graphql", Input: `directive @isAuthenticated on FIELD_DEFINITION # これがついてるとidTokenが必要
+# authAPIにトークンをプロキシするだけでgatewayでは認証をしないので、isAuthenticatedをつけない。
 extend type Query {
-  user(id: ID!): User!
+  currentUser: User! # require id_token
+  user(id: ID!): User! 
 }
 
 extend type Mutation {
-  createUser(input: CreateUserInput!): CreateUserPayload!
-  deleteUser: DeleteUserPayload! @isAuthenticated(authAPI: true)
-  updateUser(input: UpdateUserInput!): UpdateUserPayload! @isAuthenticated(authAPI: true)
-  refreshIDToken: RefreshIDTokenPayload! @isAuthenticated(authAPI: true)
+  createUser(input: CreateUserInput!): CreateUserPayload! # require id_token
+  updateUser(input: UpdateUserInput!): UpdateUserPayload! # require id_token
+  updatePassword(input: UpdatePasswordInput!): UpdatePasswordPayload! # require id_token
+  refreshIDToken: RefreshIDTokenPayload! # require refresh_token
   login(input: LoginInput!): LoginPayload!
-  logout: LogoutPayload! @isAuthenticated(authAPI: true)
+  logout: LogoutPayload! # require refresh_token
 }
 
-type User {
+extend type User {
   id: ID!
-  email: String!
+  email: String
+  name: String!
+  introduction: String!
+  sex: Sex!
+  posts: [Post!]
+  applyPosts: [ApplyPost!] 
+  image: Image
   createdAt: Time!
   updatedAt: Time!
 }
 
+enum Sex {
+  MALE
+  FEMALE
+}
+
 input CreateUserInput {
   email: String!
-  password: String!
+  password: String! # 6文字以上72文字以下の英数字
+  name: String!
+  sex: Sex!
+  introduction: String!
+  image: Upload
 }
 
 type CreateUserPayload {
@@ -1246,17 +1414,24 @@ type CreateUserPayload {
   tokenPair: TokenPair!
 }
 
-type DeleteUserPayload{
-  success: Boolean!
-}
-
 input UpdateUserInput {
   email: String!
-  password: String!
+  name: String!
+  introduction: String!
+  image: Upload
 }
 
 type UpdateUserPayload {
   user: User!
+}
+
+input UpdatePasswordInput {
+  oldPassword: String!
+  newPassword: String!
+}
+
+type UpdatePasswordPayload {
+  success: Boolean!
 }
 
 type RefreshIDTokenPayload{
@@ -1288,34 +1463,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) dir_isAuthenticated_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 bool
-	if tmp, ok := rawArgs["authAPI"]; ok {
-		arg0, err = ec.unmarshalNBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["authAPI"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_addMemberChatRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.AddMemberChatRoomInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNAddMemberChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐAddMemberChatRoomInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createApplyPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1330,12 +1477,12 @@ func (ec *executionContext) field_Mutation_createApplyPost_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createChatRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createMessage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.CreateChatRoomInput
+	var arg0 model.CreateMessageInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNCreateChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateChatRoomInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateMessageInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateMessageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1350,20 +1497,6 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 	var arg0 model.CreatePostInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalNCreatePostInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_createProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.CreateProfileInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNCreateProfileInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateProfileInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1428,12 +1561,12 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_sendMessageChatRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updatePassword_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.SendMessageChatRoomInput
+	var arg0 model.UpdatePasswordInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNSendMessageChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐSendMessageChatRoomInput(ctx, tmp)
+		arg0, err = ec.unmarshalNUpdatePasswordInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePasswordInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1448,20 +1581,6 @@ func (ec *executionContext) field_Mutation_updatePost_args(ctx context.Context, 
 	var arg0 model.UpdatePostInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalNUpdatePostInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePostInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_updateProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.UpdateProfileInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateProfileInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateProfileInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1542,17 +1661,17 @@ func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_profile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int64
-	if tmp, ok := rawArgs["userId"]; ok {
+	if tmp, ok := rawArgs["post_id"]; ok {
 		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userId"] = arg0
+	args["post_id"] = arg0
 	return args, nil
 }
 
@@ -1567,6 +1686,20 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_createPostResult_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.CreatePostResultInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNCreatePostResultInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostResultInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1620,41 +1753,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _AddMemberChatRoomPayload_member(ctx context.Context, field graphql.CollectedField, obj *model.AddMemberChatRoomPayload) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "AddMemberChatRoomPayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Member, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.RoomMember)
-	fc.Result = res
-	return ec.marshalNRoomMember2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMember(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ApplyPost_id(ctx context.Context, field graphql.CollectedField, obj *model.ApplyPost) (ret graphql.Marshaler) {
+func (ec *executionContext) _ApplyPost_id(ctx context.Context, field graphql.CollectedField, obj *pb.ApplyPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1671,7 +1770,7 @@ func (ec *executionContext) _ApplyPost_id(ctx context.Context, field graphql.Col
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1688,7 +1787,7 @@ func (ec *executionContext) _ApplyPost_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ApplyPost_userId(ctx context.Context, field graphql.CollectedField, obj *model.ApplyPost) (ret graphql.Marshaler) {
+func (ec *executionContext) _ApplyPost_user(ctx context.Context, field graphql.CollectedField, obj *pb.ApplyPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1699,13 +1798,13 @@ func (ec *executionContext) _ApplyPost_userId(ctx context.Context, field graphql
 		Object:   "ApplyPost",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
+		return ec.resolvers.ApplyPost().User(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1717,12 +1816,12 @@ func (ec *executionContext) _ApplyPost_userId(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ApplyPost_postId(ctx context.Context, field graphql.CollectedField, obj *model.ApplyPost) (ret graphql.Marshaler) {
+func (ec *executionContext) _ApplyPost_post(ctx context.Context, field graphql.CollectedField, obj *pb.ApplyPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1733,13 +1832,13 @@ func (ec *executionContext) _ApplyPost_postId(ctx context.Context, field graphql
 		Object:   "ApplyPost",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PostID, nil
+		return ec.resolvers.ApplyPost().Post(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1751,12 +1850,12 @@ func (ec *executionContext) _ApplyPost_postId(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*pb.Post)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ApplyPost_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ApplyPost) (ret graphql.Marshaler) {
+func (ec *executionContext) _ApplyPost_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.ApplyPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1785,12 +1884,12 @@ func (ec *executionContext) _ApplyPost_createdAt(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ApplyPost_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.ApplyPost) (ret graphql.Marshaler) {
+func (ec *executionContext) _ApplyPost_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.ApplyPost) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1819,145 +1918,9 @@ func (ec *executionContext) _ApplyPost_updatedAt(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ChatRoom_id(ctx context.Context, field graphql.CollectedField, obj *model.ChatRoom) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ChatRoom",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ChatRoom_postId(ctx context.Context, field graphql.CollectedField, obj *model.ChatRoom) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ChatRoom",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PostID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ChatRoom_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ChatRoom) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ChatRoom",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ChatRoom_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.ChatRoom) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ChatRoom",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CreateApplyPostPayload_applyPost(ctx context.Context, field graphql.CollectedField, obj *model.CreateApplyPostPayload) (ret graphql.Marshaler) {
@@ -1989,12 +1952,12 @@ func (ec *executionContext) _CreateApplyPostPayload_applyPost(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ApplyPost)
+	res := resTmp.(*pb.ApplyPost)
 	fc.Result = res
-	return ec.marshalNApplyPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐApplyPost(ctx, field.Selections, res)
+	return ec.marshalNApplyPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CreateChatRoomPayload_room(ctx context.Context, field graphql.CollectedField, obj *model.CreateChatRoomPayload) (ret graphql.Marshaler) {
+func (ec *executionContext) _CreateMessagePayload_message(ctx context.Context, field graphql.CollectedField, obj *model.CreateMessagePayload) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2002,7 +1965,7 @@ func (ec *executionContext) _CreateChatRoomPayload_room(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CreateChatRoomPayload",
+		Object:   "CreateMessagePayload",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2011,7 +1974,7 @@ func (ec *executionContext) _CreateChatRoomPayload_room(ctx context.Context, fie
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Room, nil
+		return obj.Message, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2023,9 +1986,9 @@ func (ec *executionContext) _CreateChatRoomPayload_room(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ChatRoom)
+	res := resTmp.(*pb.Message)
 	fc.Result = res
-	return ec.marshalNChatRoom2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐChatRoom(ctx, field.Selections, res)
+	return ec.marshalNMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CreatePostPayload_post(ctx context.Context, field graphql.CollectedField, obj *model.CreatePostPayload) (ret graphql.Marshaler) {
@@ -2057,12 +2020,12 @@ func (ec *executionContext) _CreatePostPayload_post(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*pb.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _CreateProfilePayload_profile(ctx context.Context, field graphql.CollectedField, obj *model.CreateProfilePayload) (ret graphql.Marshaler) {
+func (ec *executionContext) _CreatePostPayload_sagaId(ctx context.Context, field graphql.CollectedField, obj *model.CreatePostPayload) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2070,7 +2033,7 @@ func (ec *executionContext) _CreateProfilePayload_profile(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CreateProfilePayload",
+		Object:   "CreatePostPayload",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2079,7 +2042,7 @@ func (ec *executionContext) _CreateProfilePayload_profile(ctx context.Context, f
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Profile, nil
+		return obj.SagaID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2091,9 +2054,71 @@ func (ec *executionContext) _CreateProfilePayload_profile(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Profile)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNProfile2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐProfile(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CreatePostResultPayload_post(ctx context.Context, field graphql.CollectedField, obj *model.CreatePostResultPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CreatePostResultPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Post, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*pb.Post)
+	fc.Result = res
+	return ec.marshalOPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CreatePostResultPayload_error(ctx context.Context, field graphql.CollectedField, obj *model.CreatePostResultPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CreatePostResultPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CreateUserPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.CreateUserPayload) (ret graphql.Marshaler) {
@@ -2125,9 +2150,9 @@ func (ec *executionContext) _CreateUserPayload_user(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CreateUserPayload_tokenPair(ctx context.Context, field graphql.CollectedField, obj *model.CreateUserPayload) (ret graphql.Marshaler) {
@@ -2159,9 +2184,9 @@ func (ec *executionContext) _CreateUserPayload_tokenPair(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.TokenPair)
+	res := resTmp.(*pb.TokenPair)
 	fc.Result = res
-	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐTokenPair(ctx, field.Selections, res)
+	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐTokenPair(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeleteApplyPostPayload_success(ctx context.Context, field graphql.CollectedField, obj *model.DeleteApplyPostPayload) (ret graphql.Marshaler) {
@@ -2232,7 +2257,7 @@ func (ec *executionContext) _DeletePostPayload_success(ctx context.Context, fiel
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DeleteProfilePayload_success(ctx context.Context, field graphql.CollectedField, obj *model.DeleteProfilePayload) (ret graphql.Marshaler) {
+func (ec *executionContext) _Image_id(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2240,7 +2265,7 @@ func (ec *executionContext) _DeleteProfilePayload_success(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "DeleteProfilePayload",
+		Object:   "Image",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2249,7 +2274,7 @@ func (ec *executionContext) _DeleteProfilePayload_success(ctx context.Context, f
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Success, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2261,12 +2286,12 @@ func (ec *executionContext) _DeleteProfilePayload_success(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DeleteUserPayload_success(ctx context.Context, field graphql.CollectedField, obj *model.DeleteUserPayload) (ret graphql.Marshaler) {
+func (ec *executionContext) _Image_name(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2274,7 +2299,7 @@ func (ec *executionContext) _DeleteUserPayload_success(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "DeleteUserPayload",
+		Object:   "Image",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2283,7 +2308,7 @@ func (ec *executionContext) _DeleteUserPayload_success(ctx context.Context, fiel
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Success, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2295,9 +2320,145 @@ func (ec *executionContext) _DeleteUserPayload_success(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Image_ownerId(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Image",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OwnerId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Image_ownerType(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Image",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OwnerType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(pb.OwnerType)
+	fc.Result = res
+	return ec.marshalNOwnerType2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐOwnerType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Image_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Image",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Image_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.Image) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Image",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LoginPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
@@ -2329,9 +2490,9 @@ func (ec *executionContext) _LoginPayload_user(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LoginPayload_tokenPair(ctx context.Context, field graphql.CollectedField, obj *model.LoginPayload) (ret graphql.Marshaler) {
@@ -2363,9 +2524,9 @@ func (ec *executionContext) _LoginPayload_tokenPair(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.TokenPair)
+	res := resTmp.(*pb.TokenPair)
 	fc.Result = res
-	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐTokenPair(ctx, field.Selections, res)
+	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐTokenPair(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogoutPayload_success(ctx context.Context, field graphql.CollectedField, obj *model.LogoutPayload) (ret graphql.Marshaler) {
@@ -2402,6 +2563,408 @@ func (ec *executionContext) _LogoutPayload_success(ctx context.Context, field gr
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Member_id(ctx context.Context, field graphql.CollectedField, obj *pb.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Member",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_roomId(ctx context.Context, field graphql.CollectedField, obj *pb.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Member",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RoomId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_user(ctx context.Context, field graphql.CollectedField, obj *pb.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Member",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Member().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pb.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Member",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Member",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_id(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_body(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Body, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_roomId(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RoomId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_user(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Message().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pb.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_image(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Message().Image(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*pb.Image)
+	fc.Result = res
+	return ec.marshalOImage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Message",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MessageAddedPayload_message(ctx context.Context, field graphql.CollectedField, obj *model.MessageAddedPayload) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2431,12 +2994,12 @@ func (ec *executionContext) _MessageAddedPayload_message(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.RoomMessage)
+	res := resTmp.(*pb.Message)
 	fc.Result = res
-	return ec.marshalNRoomMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMessage(ctx, field.Selections, res)
+	return ec.marshalNMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createChatRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createMessage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2452,7 +3015,7 @@ func (ec *executionContext) _Mutation_createChatRoom(ctx context.Context, field 
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createChatRoom_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_createMessage_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2461,30 +3024,32 @@ func (ec *executionContext) _Mutation_createChatRoom(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateChatRoom(rctx, args["input"].(model.CreateChatRoomInput))
+			return ec.resolvers.Mutation().CreateMessage(rctx, args["input"].(model.CreateMessageInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
+			if ec.directives.IsMember == nil {
+				return nil, errors.New("directive isMember is not implemented")
 			}
+			return ec.directives.IsMember(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.CreateChatRoomPayload); ok {
+		if data, ok := tmp.(*model.CreateMessagePayload); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.CreateChatRoomPayload`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.CreateMessagePayload`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2496,139 +3061,9 @@ func (ec *executionContext) _Mutation_createChatRoom(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.CreateChatRoomPayload)
+	res := resTmp.(*model.CreateMessagePayload)
 	fc.Result = res
-	return ec.marshalNCreateChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateChatRoomPayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_addMemberChatRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addMemberChatRoom_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddMemberChatRoom(rctx, args["input"].(model.AddMemberChatRoomInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.AddMemberChatRoomPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.AddMemberChatRoomPayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AddMemberChatRoomPayload)
-	fc.Result = res
-	return ec.marshalNAddMemberChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐAddMemberChatRoomPayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_sendMessageChatRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_sendMessageChatRoom_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SendMessageChatRoom(rctx, args["input"].(model.SendMessageChatRoomInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.SendMessageChatRoomPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.SendMessageChatRoomPayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.SendMessageChatRoomPayload)
-	fc.Result = res
-	return ec.marshalNSendMessageChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐSendMessageChatRoomPayload(ctx, field.Selections, res)
+	return ec.marshalNCreateMessagePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateMessagePayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2659,14 +3094,10 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 			return ec.resolvers.Mutation().CreatePost(rctx, args["input"].(model.CreatePostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
 		}
 
 		tmp, err := directive1(rctx)
@@ -2724,17 +3155,19 @@ func (ec *executionContext) _Mutation_updatePost(ctx context.Context, field grap
 			return ec.resolvers.Mutation().UpdatePost(rctx, args["input"].(model.UpdatePostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
+			if ec.directives.IsPostOwner == nil {
+				return nil, errors.New("directive isPostOwner is not implemented")
 			}
+			return ec.directives.IsPostOwner(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -2789,17 +3222,19 @@ func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field grap
 			return ec.resolvers.Mutation().DeletePost(rctx, args["input"].(model.DeletePostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
+			if ec.directives.IsPostOwner == nil {
+				return nil, errors.New("directive isPostOwner is not implemented")
 			}
+			return ec.directives.IsPostOwner(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -2854,14 +3289,10 @@ func (ec *executionContext) _Mutation_createApplyPost(ctx context.Context, field
 			return ec.resolvers.Mutation().CreateApplyPost(rctx, args["input"].(model.CreateApplyPostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
 		}
 
 		tmp, err := directive1(rctx)
@@ -2919,17 +3350,19 @@ func (ec *executionContext) _Mutation_deleteApplyPost(ctx context.Context, field
 			return ec.resolvers.Mutation().DeleteApplyPost(rctx, args["input"].(model.DeleteApplyPostInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
+			if ec.directives.IsApplyPostOwner == nil {
+				return nil, errors.New("directive isApplyPostOwner is not implemented")
 			}
+			return ec.directives.IsApplyPostOwner(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -2954,194 +3387,6 @@ func (ec *executionContext) _Mutation_deleteApplyPost(ctx context.Context, field
 	res := resTmp.(*model.DeleteApplyPostPayload)
 	fc.Result = res
 	return ec.marshalNDeleteApplyPostPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteApplyPostPayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_createProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createProfile_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateProfile(rctx, args["input"].(model.CreateProfileInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.CreateProfilePayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.CreateProfilePayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.CreateProfilePayload)
-	fc.Result = res
-	return ec.marshalNCreateProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateProfilePayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteProfile(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.DeleteProfilePayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.DeleteProfilePayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.DeleteProfilePayload)
-	fc.Result = res
-	return ec.marshalNDeleteProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteProfilePayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateProfile_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateProfile(rctx, args["input"].(model.UpdateProfileInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.UpdateProfilePayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.UpdateProfilePayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.UpdateProfilePayload)
-	fc.Result = res
-	return ec.marshalNUpdateProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateProfilePayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3185,64 +3430,6 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	return ec.marshalNCreateUserPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateUserPayload(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteUser(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, true)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.DeleteUserPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.DeleteUserPayload`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.DeleteUserPayload)
-	fc.Result = res
-	return ec.marshalNDeleteUserPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteUserPayload(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3266,32 +3453,8 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateUser(rctx, args["input"].(model.UpdateUserInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, true)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.UpdateUserPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.UpdateUserPayload`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateUser(rctx, args["input"].(model.UpdateUserInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3306,6 +3469,47 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	res := resTmp.(*model.UpdateUserPayload)
 	fc.Result = res
 	return ec.marshalNUpdateUserPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateUserPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updatePassword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updatePassword_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdatePassword(rctx, args["input"].(model.UpdatePasswordInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UpdatePasswordPayload)
+	fc.Result = res
+	return ec.marshalNUpdatePasswordPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePasswordPayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_refreshIDToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3324,32 +3528,8 @@ func (ec *executionContext) _Mutation_refreshIDToken(ctx context.Context, field 
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RefreshIDToken(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, true)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.RefreshIDTokenPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.RefreshIDTokenPayload`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RefreshIDToken(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3423,32 +3603,8 @@ func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().Logout(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, true)
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
-			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*model.LogoutPayload); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/graph/model.LogoutPayload`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Logout(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3530,7 +3686,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3547,7 +3703,7 @@ func (ec *executionContext) _Post_id(ctx context.Context, field graphql.Collecte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3564,7 +3720,7 @@ func (ec *executionContext) _Post_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_title(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_title(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3598,7 +3754,7 @@ func (ec *executionContext) _Post_title(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_content(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_content(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3632,7 +3788,7 @@ func (ec *executionContext) _Post_content(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_userId(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_fishingSpotTypeId(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3649,7 +3805,7 @@ func (ec *executionContext) _Post_userId(ctx context.Context, field graphql.Coll
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
+		return obj.FishingSpotTypeId, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3666,7 +3822,273 @@ func (ec *executionContext) _Post_userId(ctx context.Context, field graphql.Coll
 	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_fishTypeIds(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FishTypeIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int64)
+	fc.Result = res
+	return ec.marshalNID2ᚕint64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_prefectureId(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrefectureId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_meetingPlaceId(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MeetingPlaceId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_meetingAt(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MeetingAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*timestamppb.Timestamp)
+	fc.Result = res
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_applyPosts(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().ApplyPosts(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*pb.ApplyPost)
+	fc.Result = res
+	return ec.marshalOApplyPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_images(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().Images(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*pb.Image)
+	fc.Result = res
+	return ec.marshalOImage2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pb.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_maxApply(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxApply, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3695,12 +4117,12 @@ func (ec *executionContext) _Post_createdAt(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3729,9 +4151,9 @@ func (ec *executionContext) _Post_updatedAt(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.PostConnection) (ret graphql.Marshaler) {
@@ -3794,12 +4216,12 @@ func (ec *executionContext) _PostConnection_nodes(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Post)
+	res := resTmp.([]*pb.Post)
 	fc.Result = res
-	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Profile_id(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_room(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3807,16 +4229,49 @@ func (ec *executionContext) _Profile_id(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Profile",
+		Object:   "Query",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_room_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Room(rctx, args["post_id"].(int64))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsMember == nil {
+				return nil, errors.New("directive isMember is not implemented")
+			}
+			return ec.directives.IsMember(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
+		}
+
+		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*pb.Room); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/ezio1119/fishapp-api-gateway/pb.Room`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3828,12 +4283,12 @@ func (ec *executionContext) _Profile_id(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*pb.Room)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNRoom2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐRoom(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Profile_name(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_healthCheck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3841,16 +4296,16 @@ func (ec *executionContext) _Profile_name(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Profile",
+		Object:   "Query",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return ec.resolvers.Query().HealthCheck(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3862,111 +4317,9 @@ func (ec *executionContext) _Profile_name(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_userId(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_created_at(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_updated_at(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4046,12 +4399,12 @@ func (ec *executionContext) _Query_post(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*pb.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_profile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4066,16 +4419,9 @@ func (ec *executionContext) _Query_profile(ctx context.Context, field graphql.Co
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_profile_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Profile(rctx, args["userId"].(int64))
+		return ec.resolvers.Query().CurrentUser(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4087,9 +4433,9 @@ func (ec *executionContext) _Query_profile(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Profile)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNProfile2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐProfile(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4128,9 +4474,9 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4231,12 +4577,12 @@ func (ec *executionContext) _RefreshIDTokenPayload_tokenPair(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.TokenPair)
+	res := resTmp.(*pb.TokenPair)
 	fc.Result = res
-	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐTokenPair(ctx, field.Selections, res)
+	return ec.marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐTokenPair(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RoomMember_id(ctx context.Context, field graphql.CollectedField, obj *model.RoomMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_id(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4244,7 +4590,7 @@ func (ec *executionContext) _RoomMember_id(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "RoomMember",
+		Object:   "Room",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -4253,7 +4599,7 @@ func (ec *executionContext) _RoomMember_id(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4270,7 +4616,7 @@ func (ec *executionContext) _RoomMember_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RoomMember_roomId(ctx context.Context, field graphql.CollectedField, obj *model.RoomMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_post(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4278,16 +4624,16 @@ func (ec *executionContext) _RoomMember_roomId(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "RoomMember",
+		Object:   "Room",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RoomID, nil
+		return ec.resolvers.Room().Post(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4299,12 +4645,12 @@ func (ec *executionContext) _RoomMember_roomId(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*pb.Post)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RoomMember_userId(ctx context.Context, field graphql.CollectedField, obj *model.RoomMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4312,7 +4658,7 @@ func (ec *executionContext) _RoomMember_userId(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "RoomMember",
+		Object:   "Room",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -4321,7 +4667,38 @@ func (ec *executionContext) _RoomMember_userId(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*pb.Message)
+	fc.Result = res
+	return ec.marshalOMessage2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_members(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Room",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Members, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4333,12 +4710,12 @@ func (ec *executionContext) _RoomMember_userId(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.([]*pb.Member)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNMember2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMemberᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RoomMember_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.RoomMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4346,7 +4723,7 @@ func (ec *executionContext) _RoomMember_createdAt(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "RoomMember",
+		Object:   "Room",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -4367,12 +4744,12 @@ func (ec *executionContext) _RoomMember_createdAt(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RoomMember_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.RoomMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4380,7 +4757,7 @@ func (ec *executionContext) _RoomMember_updatedAt(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "RoomMember",
+		Object:   "Room",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -4401,247 +4778,9 @@ func (ec *executionContext) _RoomMember_updatedAt(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_id(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_body(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Body, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_roomId(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RoomID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_userId(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RoomMessage_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.RoomMessage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "RoomMessage",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _SendMessageChatRoomPayload_message(ctx context.Context, field graphql.CollectedField, obj *model.SendMessageChatRoomPayload) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "SendMessageChatRoomPayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.RoomMessage)
-	fc.Result = res
-	return ec.marshalNRoomMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMessage(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Subscription_messageAdded(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
@@ -4672,17 +4811,19 @@ func (ec *executionContext) _Subscription_messageAdded(ctx context.Context, fiel
 			return ec.resolvers.Subscription().MessageAdded(rctx, args["input"].(model.MessageAddedInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			authAPI, err := ec.unmarshalNBoolean2bool(ctx, false)
-			if err != nil {
-				return nil, err
+			if ec.directives.IsMember == nil {
+				return nil, errors.New("directive isMember is not implemented")
 			}
+			return ec.directives.IsMember(ctx, nil, directive0)
+		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
 				return nil, errors.New("directive isAuthenticated is not implemented")
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0, authAPI)
+			return ec.directives.IsAuthenticated(ctx, nil, directive1)
 		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -4719,7 +4860,78 @@ func (ec *executionContext) _Subscription_messageAdded(ctx context.Context, fiel
 	}
 }
 
-func (ec *executionContext) _TokenPair_idToken(ctx context.Context, field graphql.CollectedField, obj *model.TokenPair) (ret graphql.Marshaler) {
+func (ec *executionContext) _Subscription_createPostResult(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_createPostResult_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Subscription().CreatePostResult(rctx, args["input"].(model.CreatePostResultInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(<-chan *model.CreatePostResultPayload); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be <-chan *github.com/ezio1119/fishapp-api-gateway/graph/model.CreatePostResultPayload`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *model.CreatePostResultPayload)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNCreatePostResultPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostResultPayload(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _TokenPair_idToken(ctx context.Context, field graphql.CollectedField, obj *pb.TokenPair) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4736,7 +4948,7 @@ func (ec *executionContext) _TokenPair_idToken(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IDToken, nil
+		return obj.IdToken, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4753,7 +4965,7 @@ func (ec *executionContext) _TokenPair_idToken(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TokenPair_refreshToken(ctx context.Context, field graphql.CollectedField, obj *model.TokenPair) (ret graphql.Marshaler) {
+func (ec *executionContext) _TokenPair_refreshToken(ctx context.Context, field graphql.CollectedField, obj *pb.TokenPair) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4787,6 +4999,40 @@ func (ec *executionContext) _TokenPair_refreshToken(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _UpdatePasswordPayload_success(ctx context.Context, field graphql.CollectedField, obj *model.UpdatePasswordPayload) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UpdatePasswordPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UpdatePostPayload_post(ctx context.Context, field graphql.CollectedField, obj *model.UpdatePostPayload) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4816,43 +5062,9 @@ func (ec *executionContext) _UpdatePostPayload_post(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*pb.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UpdateProfilePayload_profile(ctx context.Context, field graphql.CollectedField, obj *model.UpdateProfilePayload) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "UpdateProfilePayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Profile, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Profile)
-	fc.Result = res
-	return ec.marshalNProfile2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐProfile(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateUserPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.UpdateUserPayload) (ret graphql.Marshaler) {
@@ -4884,12 +5096,12 @@ func (ec *executionContext) _UpdateUserPayload_user(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*pb.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4906,7 +5118,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4923,7 +5135,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4947,6 +5159,37 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
 			ec.Errorf(ctx, "must not be null")
 		}
@@ -4957,7 +5200,168 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_introduction(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Introduction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_sex(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(pb.Sex)
+	fc.Result = res
+	return ec.marshalNSex2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐSex(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_posts(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().Posts(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*pb.Post)
+	fc.Result = res
+	return ec.marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_applyPosts(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().ApplyPosts(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*pb.ApplyPost)
+	fc.Result = res
+	return ec.marshalOApplyPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_image(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().Image(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*pb.Image)
+	fc.Result = res
+	return ec.marshalOImage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4986,12 +5390,12 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.CollectedField, obj *pb.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5020,9 +5424,9 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*timestamppb.Timestamp)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -6080,24 +6484,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAddMemberChatRoomInput(ctx context.Context, obj interface{}) (model.AddMemberChatRoomInput, error) {
-	var it model.AddMemberChatRoomInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "roomId":
-			var err error
-			it.RoomID, err = ec.unmarshalNID2int64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputCreateApplyPostInput(ctx context.Context, obj interface{}) (model.CreateApplyPostInput, error) {
 	var it model.CreateApplyPostInput
 	var asMap = obj.(map[string]interface{})
@@ -6116,15 +6502,27 @@ func (ec *executionContext) unmarshalInputCreateApplyPostInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateChatRoomInput(ctx context.Context, obj interface{}) (model.CreateChatRoomInput, error) {
-	var it model.CreateChatRoomInput
+func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context, obj interface{}) (model.CreateMessageInput, error) {
+	var it model.CreateMessageInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "postId":
+		case "body":
 			var err error
-			it.PostID, err = ec.unmarshalNID2int64(ctx, v)
+			it.Body, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "roomId":
+			var err error
+			it.RoomID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "image":
+			var err error
+			it.Image, err = ec.unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6152,21 +6550,63 @@ func (ec *executionContext) unmarshalInputCreatePostInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "fishingSpotTypeId":
+			var err error
+			it.FishingSpotTypeID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fishTypeIds":
+			var err error
+			it.FishTypeIds, err = ec.unmarshalNID2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "prefectureId":
+			var err error
+			it.PrefectureID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingPlaceId":
+			var err error
+			it.MeetingPlaceID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingAt":
+			var err error
+			it.MeetingAt, err = ec.unmarshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "maxApply":
+			var err error
+			it.MaxApply, err = ec.unmarshalNInt2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "images":
+			var err error
+			it.Images, err = ec.unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateProfileInput(ctx context.Context, obj interface{}) (model.CreateProfileInput, error) {
-	var it model.CreateProfileInput
+func (ec *executionContext) unmarshalInputCreatePostResultInput(ctx context.Context, obj interface{}) (model.CreatePostResultInput, error) {
+	var it model.CreatePostResultInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
+		case "sagaId":
 			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			it.SagaID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6194,6 +6634,30 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sex":
+			var err error
+			it.Sex, err = ec.unmarshalNSex2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐSex(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "introduction":
+			var err error
+			it.Introduction, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "image":
+			var err error
+			it.Image, err = ec.unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6206,9 +6670,9 @@ func (ec *executionContext) unmarshalInputDeleteApplyPostInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
-		case "applyPostId":
+		case "id":
 			var err error
-			it.ApplyPostID, err = ec.unmarshalNID2int64(ctx, v)
+			it.ID, err = ec.unmarshalNID2int64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6266,9 +6730,9 @@ func (ec *executionContext) unmarshalInputMessageAddedInput(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "roomIds":
+		case "roomId":
 			var err error
-			it.RoomIds, err = ec.unmarshalNID2ᚕint64ᚄ(ctx, v)
+			it.RoomID, err = ec.unmarshalNID2int64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6284,9 +6748,57 @@ func (ec *executionContext) unmarshalInputPostsInput(ctx context.Context, obj in
 
 	for k, v := range asMap {
 		switch k {
-		case "notImplement":
+		case "prefectureId":
 			var err error
-			it.NotImplement, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.PrefectureID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fishingSpotTypeId":
+			var err error
+			it.FishingSpotTypeID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fishTypeIds":
+			var err error
+			it.FishTypeIds, err = ec.unmarshalOID2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingAtFrom":
+			var err error
+			it.MeetingAtFrom, err = ec.unmarshalOTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingAtTo":
+			var err error
+			it.MeetingAtTo, err = ec.unmarshalOTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "canApply":
+			var err error
+			it.CanApply, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "orderBy":
+			var err error
+			it.OrderBy, err = ec.unmarshalOPostOrderBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sortBy":
+			var err error
+			it.SortBy, err = ec.unmarshalOPostSortBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userId":
+			var err error
+			it.UserID, err = ec.unmarshalOID2ᚖint64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6296,21 +6808,21 @@ func (ec *executionContext) unmarshalInputPostsInput(ctx context.Context, obj in
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSendMessageChatRoomInput(ctx context.Context, obj interface{}) (model.SendMessageChatRoomInput, error) {
-	var it model.SendMessageChatRoomInput
+func (ec *executionContext) unmarshalInputUpdatePasswordInput(ctx context.Context, obj interface{}) (model.UpdatePasswordInput, error) {
+	var it model.UpdatePasswordInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "body":
+		case "oldPassword":
 			var err error
-			it.Body, err = ec.unmarshalNString2string(ctx, v)
+			it.OldPassword, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "roomId":
+		case "newPassword":
 			var err error
-			it.RoomID, err = ec.unmarshalNID2int64(ctx, v)
+			it.NewPassword, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6344,21 +6856,51 @@ func (ec *executionContext) unmarshalInputUpdatePostInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context, obj interface{}) (model.UpdateProfileInput, error) {
-	var it model.UpdateProfileInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
+		case "fishingSpotTypeId":
 			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			it.FishingSpotTypeID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fishTypeIds":
+			var err error
+			it.FishTypeIds, err = ec.unmarshalNID2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "prefectureId":
+			var err error
+			it.PrefectureID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingPlaceId":
+			var err error
+			it.MeetingPlaceID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meetingAt":
+			var err error
+			it.MeetingAt, err = ec.unmarshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "maxApply":
+			var err error
+			it.MaxApply, err = ec.unmarshalNInt2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "imageIdsToDelete":
+			var err error
+			it.ImageIdsToDelete, err = ec.unmarshalOInt2ᚕint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "images":
+			var err error
+			it.Images, err = ec.unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6380,9 +6922,21 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "password":
+		case "name":
 			var err error
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "introduction":
+			var err error
+			it.Introduction, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "image":
+			var err error
+			it.Image, err = ec.unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6400,36 +6954,9 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
-var addMemberChatRoomPayloadImplementors = []string{"AddMemberChatRoomPayload"}
-
-func (ec *executionContext) _AddMemberChatRoomPayload(ctx context.Context, sel ast.SelectionSet, obj *model.AddMemberChatRoomPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, addMemberChatRoomPayloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AddMemberChatRoomPayload")
-		case "member":
-			out.Values[i] = ec._AddMemberChatRoomPayload_member(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var applyPostImplementors = []string{"ApplyPost"}
 
-func (ec *executionContext) _ApplyPost(ctx context.Context, sel ast.SelectionSet, obj *model.ApplyPost) graphql.Marshaler {
+func (ec *executionContext) _ApplyPost(ctx context.Context, sel ast.SelectionSet, obj *pb.ApplyPost) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, applyPostImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6441,69 +6968,45 @@ func (ec *executionContext) _ApplyPost(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._ApplyPost_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "userId":
-			out.Values[i] = ec._ApplyPost_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "postId":
-			out.Values[i] = ec._ApplyPost_postId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ApplyPost_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "post":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ApplyPost_post(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._ApplyPost_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._ApplyPost_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var chatRoomImplementors = []string{"ChatRoom"}
-
-func (ec *executionContext) _ChatRoom(ctx context.Context, sel ast.SelectionSet, obj *model.ChatRoom) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, chatRoomImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ChatRoom")
-		case "id":
-			out.Values[i] = ec._ChatRoom_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "postId":
-			out.Values[i] = ec._ChatRoom_postId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._ChatRoom_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "updatedAt":
-			out.Values[i] = ec._ChatRoom_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6543,19 +7046,19 @@ func (ec *executionContext) _CreateApplyPostPayload(ctx context.Context, sel ast
 	return out
 }
 
-var createChatRoomPayloadImplementors = []string{"CreateChatRoomPayload"}
+var createMessagePayloadImplementors = []string{"CreateMessagePayload"}
 
-func (ec *executionContext) _CreateChatRoomPayload(ctx context.Context, sel ast.SelectionSet, obj *model.CreateChatRoomPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, createChatRoomPayloadImplementors)
+func (ec *executionContext) _CreateMessagePayload(ctx context.Context, sel ast.SelectionSet, obj *model.CreateMessagePayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, createMessagePayloadImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CreateChatRoomPayload")
-		case "room":
-			out.Values[i] = ec._CreateChatRoomPayload_room(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("CreateMessagePayload")
+		case "message":
+			out.Values[i] = ec._CreateMessagePayload_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6586,6 +7089,11 @@ func (ec *executionContext) _CreatePostPayload(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "sagaId":
+			out.Values[i] = ec._CreatePostPayload_sagaId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6597,22 +7105,21 @@ func (ec *executionContext) _CreatePostPayload(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var createProfilePayloadImplementors = []string{"CreateProfilePayload"}
+var createPostResultPayloadImplementors = []string{"CreatePostResultPayload"}
 
-func (ec *executionContext) _CreateProfilePayload(ctx context.Context, sel ast.SelectionSet, obj *model.CreateProfilePayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, createProfilePayloadImplementors)
+func (ec *executionContext) _CreatePostResultPayload(ctx context.Context, sel ast.SelectionSet, obj *model.CreatePostResultPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, createPostResultPayloadImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CreateProfilePayload")
-		case "profile":
-			out.Values[i] = ec._CreateProfilePayload_profile(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			out.Values[i] = graphql.MarshalString("CreatePostResultPayload")
+		case "post":
+			out.Values[i] = ec._CreatePostResultPayload_post(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._CreatePostResultPayload_error(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6710,46 +7217,44 @@ func (ec *executionContext) _DeletePostPayload(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var deleteProfilePayloadImplementors = []string{"DeleteProfilePayload"}
+var imageImplementors = []string{"Image"}
 
-func (ec *executionContext) _DeleteProfilePayload(ctx context.Context, sel ast.SelectionSet, obj *model.DeleteProfilePayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, deleteProfilePayloadImplementors)
+func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, obj *pb.Image) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, imageImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("DeleteProfilePayload")
-		case "success":
-			out.Values[i] = ec._DeleteProfilePayload_success(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("Image")
+		case "id":
+			out.Values[i] = ec._Image_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var deleteUserPayloadImplementors = []string{"DeleteUserPayload"}
-
-func (ec *executionContext) _DeleteUserPayload(ctx context.Context, sel ast.SelectionSet, obj *model.DeleteUserPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, deleteUserPayloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("DeleteUserPayload")
-		case "success":
-			out.Values[i] = ec._DeleteUserPayload_success(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._Image_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ownerId":
+			out.Values[i] = ec._Image_ownerId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ownerType":
+			out.Values[i] = ec._Image_ownerType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Image_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Image_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6823,6 +7328,131 @@ func (ec *executionContext) _LogoutPayload(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var memberImplementors = []string{"Member"}
+
+func (ec *executionContext) _Member(ctx context.Context, sel ast.SelectionSet, obj *pb.Member) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, memberImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Member")
+		case "id":
+			out.Values[i] = ec._Member_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "roomId":
+			out.Values[i] = ec._Member_roomId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Member_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "createdAt":
+			out.Values[i] = ec._Member_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Member_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var messageImplementors = []string{"Message"}
+
+func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *pb.Message) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, messageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Message")
+		case "id":
+			out.Values[i] = ec._Message_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "body":
+			out.Values[i] = ec._Message_body(ctx, field, obj)
+		case "roomId":
+			out.Values[i] = ec._Message_roomId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "image":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_image(ctx, field, obj)
+				return res
+			})
+		case "createdAt":
+			out.Values[i] = ec._Message_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Message_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var messageAddedPayloadImplementors = []string{"MessageAddedPayload"}
 
 func (ec *executionContext) _MessageAddedPayload(ctx context.Context, sel ast.SelectionSet, obj *model.MessageAddedPayload) graphql.Marshaler {
@@ -6865,18 +7495,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createChatRoom":
-			out.Values[i] = ec._Mutation_createChatRoom(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "addMemberChatRoom":
-			out.Values[i] = ec._Mutation_addMemberChatRoom(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "sendMessageChatRoom":
-			out.Values[i] = ec._Mutation_sendMessageChatRoom(ctx, field)
+		case "createMessage":
+			out.Values[i] = ec._Mutation_createMessage(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6905,33 +7525,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createProfile":
-			out.Values[i] = ec._Mutation_createProfile(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "deleteProfile":
-			out.Values[i] = ec._Mutation_deleteProfile(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "updateProfile":
-			out.Values[i] = ec._Mutation_updateProfile(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "createUser":
 			out.Values[i] = ec._Mutation_createUser(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteUser":
-			out.Values[i] = ec._Mutation_deleteUser(ctx, field)
+		case "updateUser":
+			out.Values[i] = ec._Mutation_updateUser(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateUser":
-			out.Values[i] = ec._Mutation_updateUser(ctx, field)
+		case "updatePassword":
+			out.Values[i] = ec._Mutation_updatePassword(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6992,7 +7597,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 
 var postImplementors = []string{"Post"}
 
-func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *model.Post) graphql.Marshaler {
+func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *pb.Post) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, postImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7004,32 +7609,93 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._Post_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Post_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "content":
 			out.Values[i] = ec._Post_content(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "userId":
-			out.Values[i] = ec._Post_userId(ctx, field, obj)
+		case "fishingSpotTypeId":
+			out.Values[i] = ec._Post_fishingSpotTypeId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fishTypeIds":
+			out.Values[i] = ec._Post_fishTypeIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "prefectureId":
+			out.Values[i] = ec._Post_prefectureId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "meetingPlaceId":
+			out.Values[i] = ec._Post_meetingPlaceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "meetingAt":
+			out.Values[i] = ec._Post_meetingAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "applyPosts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_applyPosts(ctx, field, obj)
+				return res
+			})
+		case "images":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_images(ctx, field, obj)
+				return res
+			})
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "maxApply":
+			out.Values[i] = ec._Post_maxApply(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Post_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Post_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -7071,53 +7737,6 @@ func (ec *executionContext) _PostConnection(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var profileImplementors = []string{"Profile"}
-
-func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, obj *model.Profile) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, profileImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Profile")
-		case "id":
-			out.Values[i] = ec._Profile_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "name":
-			out.Values[i] = ec._Profile_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "userId":
-			out.Values[i] = ec._Profile_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "created_at":
-			out.Values[i] = ec._Profile_created_at(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "updated_at":
-			out.Values[i] = ec._Profile_updated_at(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -7133,6 +7752,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "room":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_room(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "healthCheck":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_healthCheck(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "posts":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7161,7 +7808,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "profile":
+		case "currentUser":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -7169,7 +7816,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_profile(ctx, field)
+				res = ec._Query_currentUser(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -7231,120 +7878,52 @@ func (ec *executionContext) _RefreshIDTokenPayload(ctx context.Context, sel ast.
 	return out
 }
 
-var roomMemberImplementors = []string{"RoomMember"}
+var roomImplementors = []string{"Room"}
 
-func (ec *executionContext) _RoomMember(ctx context.Context, sel ast.SelectionSet, obj *model.RoomMember) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, roomMemberImplementors)
+func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj *pb.Room) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, roomImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("RoomMember")
+			out.Values[i] = graphql.MarshalString("Room")
 		case "id":
-			out.Values[i] = ec._RoomMember_id(ctx, field, obj)
+			out.Values[i] = ec._Room_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "roomId":
-			out.Values[i] = ec._RoomMember_roomId(ctx, field, obj)
+		case "post":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Room_post(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "messages":
+			out.Values[i] = ec._Room_messages(ctx, field, obj)
+		case "members":
+			out.Values[i] = ec._Room_members(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "userId":
-			out.Values[i] = ec._RoomMember_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
-			out.Values[i] = ec._RoomMember_createdAt(ctx, field, obj)
+			out.Values[i] = ec._Room_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
-			out.Values[i] = ec._RoomMember_updatedAt(ctx, field, obj)
+			out.Values[i] = ec._Room_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var roomMessageImplementors = []string{"RoomMessage"}
-
-func (ec *executionContext) _RoomMessage(ctx context.Context, sel ast.SelectionSet, obj *model.RoomMessage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, roomMessageImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RoomMessage")
-		case "id":
-			out.Values[i] = ec._RoomMessage_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "body":
-			out.Values[i] = ec._RoomMessage_body(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "roomId":
-			out.Values[i] = ec._RoomMessage_roomId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "userId":
-			out.Values[i] = ec._RoomMessage_userId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._RoomMessage_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "updatedAt":
-			out.Values[i] = ec._RoomMessage_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var sendMessageChatRoomPayloadImplementors = []string{"SendMessageChatRoomPayload"}
-
-func (ec *executionContext) _SendMessageChatRoomPayload(ctx context.Context, sel ast.SelectionSet, obj *model.SendMessageChatRoomPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, sendMessageChatRoomPayloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("SendMessageChatRoomPayload")
-		case "message":
-			out.Values[i] = ec._SendMessageChatRoomPayload_message(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -7372,6 +7951,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	switch fields[0].Name {
 	case "messageAdded":
 		return ec._Subscription_messageAdded(ctx, fields[0])
+	case "createPostResult":
+		return ec._Subscription_createPostResult(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -7379,7 +7960,7 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 
 var tokenPairImplementors = []string{"TokenPair"}
 
-func (ec *executionContext) _TokenPair(ctx context.Context, sel ast.SelectionSet, obj *model.TokenPair) graphql.Marshaler {
+func (ec *executionContext) _TokenPair(ctx context.Context, sel ast.SelectionSet, obj *pb.TokenPair) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, tokenPairImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7409,19 +7990,19 @@ func (ec *executionContext) _TokenPair(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var updatePostPayloadImplementors = []string{"UpdatePostPayload"}
+var updatePasswordPayloadImplementors = []string{"UpdatePasswordPayload"}
 
-func (ec *executionContext) _UpdatePostPayload(ctx context.Context, sel ast.SelectionSet, obj *model.UpdatePostPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, updatePostPayloadImplementors)
+func (ec *executionContext) _UpdatePasswordPayload(ctx context.Context, sel ast.SelectionSet, obj *model.UpdatePasswordPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updatePasswordPayloadImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("UpdatePostPayload")
-		case "post":
-			out.Values[i] = ec._UpdatePostPayload_post(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("UpdatePasswordPayload")
+		case "success":
+			out.Values[i] = ec._UpdatePasswordPayload_success(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7436,19 +8017,19 @@ func (ec *executionContext) _UpdatePostPayload(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var updateProfilePayloadImplementors = []string{"UpdateProfilePayload"}
+var updatePostPayloadImplementors = []string{"UpdatePostPayload"}
 
-func (ec *executionContext) _UpdateProfilePayload(ctx context.Context, sel ast.SelectionSet, obj *model.UpdateProfilePayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, updateProfilePayloadImplementors)
+func (ec *executionContext) _UpdatePostPayload(ctx context.Context, sel ast.SelectionSet, obj *model.UpdatePostPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updatePostPayloadImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("UpdateProfilePayload")
-		case "profile":
-			out.Values[i] = ec._UpdateProfilePayload_profile(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("UpdatePostPayload")
+		case "post":
+			out.Values[i] = ec._UpdatePostPayload_post(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7492,7 +8073,7 @@ func (ec *executionContext) _UpdateUserPayload(ctx context.Context, sel ast.Sele
 
 var userImplementors = []string{"User"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *pb.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7504,22 +8085,67 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._User_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "introduction":
+			out.Values[i] = ec._User_introduction(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sex":
+			out.Values[i] = ec._User_sex(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "posts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_posts(ctx, field, obj)
+				return res
+			})
+		case "applyPosts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_applyPosts(ctx, field, obj)
+				return res
+			})
+		case "image":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_image(ctx, field, obj)
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._User_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -7777,29 +8403,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNAddMemberChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐAddMemberChatRoomInput(ctx context.Context, v interface{}) (model.AddMemberChatRoomInput, error) {
-	return ec.unmarshalInputAddMemberChatRoomInput(ctx, v)
-}
-
-func (ec *executionContext) marshalNAddMemberChatRoomPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐAddMemberChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v model.AddMemberChatRoomPayload) graphql.Marshaler {
-	return ec._AddMemberChatRoomPayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAddMemberChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐAddMemberChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v *model.AddMemberChatRoomPayload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._AddMemberChatRoomPayload(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNApplyPost2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐApplyPost(ctx context.Context, sel ast.SelectionSet, v model.ApplyPost) graphql.Marshaler {
+func (ec *executionContext) marshalNApplyPost2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPost(ctx context.Context, sel ast.SelectionSet, v pb.ApplyPost) graphql.Marshaler {
 	return ec._ApplyPost(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApplyPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐApplyPost(ctx context.Context, sel ast.SelectionSet, v *model.ApplyPost) graphql.Marshaler {
+func (ec *executionContext) marshalNApplyPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPost(ctx context.Context, sel ast.SelectionSet, v *pb.ApplyPost) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -7823,20 +8431,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNChatRoom2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐChatRoom(ctx context.Context, sel ast.SelectionSet, v model.ChatRoom) graphql.Marshaler {
-	return ec._ChatRoom(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNChatRoom2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐChatRoom(ctx context.Context, sel ast.SelectionSet, v *model.ChatRoom) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ChatRoom(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNCreateApplyPostInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateApplyPostInput(ctx context.Context, v interface{}) (model.CreateApplyPostInput, error) {
 	return ec.unmarshalInputCreateApplyPostInput(ctx, v)
 }
@@ -7855,22 +8449,22 @@ func (ec *executionContext) marshalNCreateApplyPostPayload2ᚖgithubᚗcomᚋezi
 	return ec._CreateApplyPostPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCreateChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateChatRoomInput(ctx context.Context, v interface{}) (model.CreateChatRoomInput, error) {
-	return ec.unmarshalInputCreateChatRoomInput(ctx, v)
+func (ec *executionContext) unmarshalNCreateMessageInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateMessageInput(ctx context.Context, v interface{}) (model.CreateMessageInput, error) {
+	return ec.unmarshalInputCreateMessageInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNCreateChatRoomPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v model.CreateChatRoomPayload) graphql.Marshaler {
-	return ec._CreateChatRoomPayload(ctx, sel, &v)
+func (ec *executionContext) marshalNCreateMessagePayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateMessagePayload(ctx context.Context, sel ast.SelectionSet, v model.CreateMessagePayload) graphql.Marshaler {
+	return ec._CreateMessagePayload(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCreateChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v *model.CreateChatRoomPayload) graphql.Marshaler {
+func (ec *executionContext) marshalNCreateMessagePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateMessagePayload(ctx context.Context, sel ast.SelectionSet, v *model.CreateMessagePayload) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._CreateChatRoomPayload(ctx, sel, v)
+	return ec._CreateMessagePayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreatePostInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostInput(ctx context.Context, v interface{}) (model.CreatePostInput, error) {
@@ -7891,22 +8485,22 @@ func (ec *executionContext) marshalNCreatePostPayload2ᚖgithubᚗcomᚋezio1119
 	return ec._CreatePostPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCreateProfileInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateProfileInput(ctx context.Context, v interface{}) (model.CreateProfileInput, error) {
-	return ec.unmarshalInputCreateProfileInput(ctx, v)
+func (ec *executionContext) unmarshalNCreatePostResultInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostResultInput(ctx context.Context, v interface{}) (model.CreatePostResultInput, error) {
+	return ec.unmarshalInputCreatePostResultInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNCreateProfilePayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateProfilePayload(ctx context.Context, sel ast.SelectionSet, v model.CreateProfilePayload) graphql.Marshaler {
-	return ec._CreateProfilePayload(ctx, sel, &v)
+func (ec *executionContext) marshalNCreatePostResultPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostResultPayload(ctx context.Context, sel ast.SelectionSet, v model.CreatePostResultPayload) graphql.Marshaler {
+	return ec._CreatePostResultPayload(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCreateProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateProfilePayload(ctx context.Context, sel ast.SelectionSet, v *model.CreateProfilePayload) graphql.Marshaler {
+func (ec *executionContext) marshalNCreatePostResultPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreatePostResultPayload(ctx context.Context, sel ast.SelectionSet, v *model.CreatePostResultPayload) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._CreateProfilePayload(ctx, sel, v)
+	return ec._CreatePostResultPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreateUserInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v interface{}) (model.CreateUserInput, error) {
@@ -7963,34 +8557,6 @@ func (ec *executionContext) marshalNDeletePostPayload2ᚖgithubᚗcomᚋezio1119
 	return ec._DeletePostPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDeleteProfilePayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteProfilePayload(ctx context.Context, sel ast.SelectionSet, v model.DeleteProfilePayload) graphql.Marshaler {
-	return ec._DeleteProfilePayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDeleteProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteProfilePayload(ctx context.Context, sel ast.SelectionSet, v *model.DeleteProfilePayload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DeleteProfilePayload(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNDeleteUserPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteUserPayload(ctx context.Context, sel ast.SelectionSet, v model.DeleteUserPayload) graphql.Marshaler {
-	return ec._DeleteUserPayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDeleteUserPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐDeleteUserPayload(ctx context.Context, sel ast.SelectionSet, v *model.DeleteUserPayload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DeleteUserPayload(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
 	return graphql.UnmarshalInt64(v)
 }
@@ -8034,6 +8600,34 @@ func (ec *executionContext) marshalNID2ᚕint64ᚄ(ctx context.Context, sel ast.
 	return ret
 }
 
+func (ec *executionContext) marshalNImage2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx context.Context, sel ast.SelectionSet, v pb.Image) graphql.Marshaler {
+	return ec._Image(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNImage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx context.Context, sel ast.SelectionSet, v *pb.Image) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Image(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {
 	return ec.unmarshalInputLoginInput(ctx, v)
 }
@@ -8066,6 +8660,71 @@ func (ec *executionContext) marshalNLogoutPayload2ᚖgithubᚗcomᚋezio1119ᚋf
 	return ec._LogoutPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMember2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMember(ctx context.Context, sel ast.SelectionSet, v pb.Member) graphql.Marshaler {
+	return ec._Member(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMember2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*pb.Member) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMember2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMember(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNMember2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMember(ctx context.Context, sel ast.SelectionSet, v *pb.Member) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Member(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMessage2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessage(ctx context.Context, sel ast.SelectionSet, v pb.Message) graphql.Marshaler {
+	return ec._Message(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessage(ctx context.Context, sel ast.SelectionSet, v *pb.Message) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Message(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMessageAddedInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐMessageAddedInput(ctx context.Context, v interface{}) (model.MessageAddedInput, error) {
 	return ec.unmarshalInputMessageAddedInput(ctx, v)
 }
@@ -8084,6 +8743,20 @@ func (ec *executionContext) marshalNMessageAddedPayload2ᚖgithubᚗcomᚋezio11
 	return ec._MessageAddedPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOwnerType2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐOwnerType(ctx context.Context, v interface{}) (pb.OwnerType, error) {
+	return model.UnmarshalOwnerType(v)
+}
+
+func (ec *executionContext) marshalNOwnerType2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐOwnerType(ctx context.Context, sel ast.SelectionSet, v pb.OwnerType) graphql.Marshaler {
+	res := model.MarshalOwnerType(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v model.PageInfo) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
 }
@@ -8098,11 +8771,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋezio1119ᚋfishap
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPost2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx context.Context, sel ast.SelectionSet, v pb.Post) graphql.Marshaler {
 	return ec._Post(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx context.Context, sel ast.SelectionSet, v *pb.Post) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8130,20 +8803,6 @@ func (ec *executionContext) unmarshalNPostsInput2githubᚗcomᚋezio1119ᚋfisha
 	return ec.unmarshalInputPostsInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNProfile2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v model.Profile) graphql.Marshaler {
-	return ec._Profile(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐProfile(ctx context.Context, sel ast.SelectionSet, v *model.Profile) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Profile(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNRefreshIDTokenPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRefreshIDTokenPayload(ctx context.Context, sel ast.SelectionSet, v model.RefreshIDTokenPayload) graphql.Marshaler {
 	return ec._RefreshIDTokenPayload(ctx, sel, &v)
 }
@@ -8158,50 +8817,32 @@ func (ec *executionContext) marshalNRefreshIDTokenPayload2ᚖgithubᚗcomᚋezio
 	return ec._RefreshIDTokenPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRoomMember2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMember(ctx context.Context, sel ast.SelectionSet, v model.RoomMember) graphql.Marshaler {
-	return ec._RoomMember(ctx, sel, &v)
+func (ec *executionContext) marshalNRoom2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐRoom(ctx context.Context, sel ast.SelectionSet, v pb.Room) graphql.Marshaler {
+	return ec._Room(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRoomMember2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMember(ctx context.Context, sel ast.SelectionSet, v *model.RoomMember) graphql.Marshaler {
+func (ec *executionContext) marshalNRoom2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐRoom(ctx context.Context, sel ast.SelectionSet, v *pb.Room) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._RoomMember(ctx, sel, v)
+	return ec._Room(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRoomMessage2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMessage(ctx context.Context, sel ast.SelectionSet, v model.RoomMessage) graphql.Marshaler {
-	return ec._RoomMessage(ctx, sel, &v)
+func (ec *executionContext) unmarshalNSex2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐSex(ctx context.Context, v interface{}) (pb.Sex, error) {
+	return model.UnmarshalSex(v)
 }
 
-func (ec *executionContext) marshalNRoomMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐRoomMessage(ctx context.Context, sel ast.SelectionSet, v *model.RoomMessage) graphql.Marshaler {
-	if v == nil {
+func (ec *executionContext) marshalNSex2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐSex(ctx context.Context, sel ast.SelectionSet, v pb.Sex) graphql.Marshaler {
+	res := model.MarshalSex(v)
+	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
-		return graphql.Null
 	}
-	return ec._RoomMessage(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNSendMessageChatRoomInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐSendMessageChatRoomInput(ctx context.Context, v interface{}) (model.SendMessageChatRoomInput, error) {
-	return ec.unmarshalInputSendMessageChatRoomInput(ctx, v)
-}
-
-func (ec *executionContext) marshalNSendMessageChatRoomPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐSendMessageChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v model.SendMessageChatRoomPayload) graphql.Marshaler {
-	return ec._SendMessageChatRoomPayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNSendMessageChatRoomPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐSendMessageChatRoomPayload(ctx context.Context, sel ast.SelectionSet, v *model.SendMessageChatRoomPayload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._SendMessageChatRoomPayload(ctx, sel, v)
+	return res
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -8218,12 +8859,12 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
+func (ec *executionContext) unmarshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, v interface{}) (timestamppb.Timestamp, error) {
+	return scalar.UnmarshalTimeProto(v)
 }
 
-func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	res := graphql.MarshalTime(v)
+func (ec *executionContext) marshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v timestamppb.Timestamp) graphql.Marshaler {
+	res := scalar.MarshalTimeProto(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8232,11 +8873,29 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalNTokenPair2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐTokenPair(ctx context.Context, sel ast.SelectionSet, v model.TokenPair) graphql.Marshaler {
+func (ec *executionContext) unmarshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, v interface{}) (*timestamppb.Timestamp, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v *timestamppb.Timestamp) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec.marshalNTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalNTokenPair2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐTokenPair(ctx context.Context, sel ast.SelectionSet, v pb.TokenPair) graphql.Marshaler {
 	return ec._TokenPair(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐTokenPair(ctx context.Context, sel ast.SelectionSet, v *model.TokenPair) graphql.Marshaler {
+func (ec *executionContext) marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐTokenPair(ctx context.Context, sel ast.SelectionSet, v *pb.TokenPair) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8244,6 +8903,24 @@ func (ec *executionContext) marshalNTokenPair2ᚖgithubᚗcomᚋezio1119ᚋfisha
 		return graphql.Null
 	}
 	return ec._TokenPair(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUpdatePasswordInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePasswordInput(ctx context.Context, v interface{}) (model.UpdatePasswordInput, error) {
+	return ec.unmarshalInputUpdatePasswordInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNUpdatePasswordPayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePasswordPayload(ctx context.Context, sel ast.SelectionSet, v model.UpdatePasswordPayload) graphql.Marshaler {
+	return ec._UpdatePasswordPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUpdatePasswordPayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePasswordPayload(ctx context.Context, sel ast.SelectionSet, v *model.UpdatePasswordPayload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UpdatePasswordPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUpdatePostInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdatePostInput(ctx context.Context, v interface{}) (model.UpdatePostInput, error) {
@@ -8264,24 +8941,6 @@ func (ec *executionContext) marshalNUpdatePostPayload2ᚖgithubᚗcomᚋezio1119
 	return ec._UpdatePostPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUpdateProfileInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateProfileInput(ctx context.Context, v interface{}) (model.UpdateProfileInput, error) {
-	return ec.unmarshalInputUpdateProfileInput(ctx, v)
-}
-
-func (ec *executionContext) marshalNUpdateProfilePayload2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateProfilePayload(ctx context.Context, sel ast.SelectionSet, v model.UpdateProfilePayload) graphql.Marshaler {
-	return ec._UpdateProfilePayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUpdateProfilePayload2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateProfilePayload(ctx context.Context, sel ast.SelectionSet, v *model.UpdateProfilePayload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._UpdateProfilePayload(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNUpdateUserInput2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUpdateUserInput(ctx context.Context, v interface{}) (model.UpdateUserInput, error) {
 	return ec.unmarshalInputUpdateUserInput(ctx, v)
 }
@@ -8300,11 +8959,43 @@ func (ec *executionContext) marshalNUpdateUserPayload2ᚖgithubᚗcomᚋezio1119
 	return ec._UpdateUserPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUser2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
+	return graphql.UnmarshalUpload(v)
+}
+
+func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	res := graphql.MarshalUpload(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (*graphql.Upload, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v *graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec.marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalNUser2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx context.Context, sel ast.SelectionSet, v pb.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐUser(ctx context.Context, sel ast.SelectionSet, v *pb.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8540,53 +9231,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	return graphql.UnmarshalBoolean(v)
-}
-
-func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	return graphql.MarshalBoolean(v)
-}
-
-func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v interface{}) (*bool, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOBoolean2bool(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOBoolean2bool(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	return graphql.UnmarshalInt64(v)
-}
-
-func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	return graphql.MarshalInt64(v)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOInt2int64(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOInt2int64(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOApplyPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*pb.ApplyPost) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8613,7 +9258,7 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishapp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNApplyPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐApplyPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8624,6 +9269,367 @@ func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishapp
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+	return graphql.UnmarshalBoolean(v)
+}
+
+func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	return graphql.MarshalBoolean(v)
+}
+
+func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v interface{}) (*bool, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOBoolean2bool(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOBoolean2bool(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOID2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalOID2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	return graphql.MarshalInt64(v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚕint64ᚄ(ctx context.Context, v interface{}) ([]int64, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int64, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNID2int64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕint64ᚄ(ctx context.Context, sel ast.SelectionSet, v []int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2int64(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOID2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOID2int64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOID2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOID2int64(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOImage2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx context.Context, sel ast.SelectionSet, v pb.Image) graphql.Marshaler {
+	return ec._Image(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOImage2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImageᚄ(ctx context.Context, sel ast.SelectionSet, v []*pb.Image) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNImage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOImage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐImage(ctx context.Context, sel ast.SelectionSet, v *pb.Image) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Image(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	return graphql.MarshalInt64(v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚕint64ᚄ(ctx context.Context, v interface{}) ([]int64, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int64, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNInt2int64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt2ᚕint64ᚄ(ctx context.Context, sel ast.SelectionSet, v []int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int64(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2int64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2int64(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOMessage2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*pb.Message) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMessage2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐMessage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPost2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx context.Context, sel ast.SelectionSet, v pb.Post) graphql.Marshaler {
+	return ec._Post(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx context.Context, sel ast.SelectionSet, v []*pb.Post) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPost2ᚕᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*pb.Post) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPost2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐPost(ctx context.Context, sel ast.SelectionSet, v *pb.Post) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Post(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPostOrderBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx context.Context, v interface{}) (pb.ListPostsReq_Filter_OrderBy, error) {
+	return model.UnmarshalPostOrderBy(v)
+}
+
+func (ec *executionContext) marshalOPostOrderBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx context.Context, sel ast.SelectionSet, v pb.ListPostsReq_Filter_OrderBy) graphql.Marshaler {
+	return model.MarshalPostOrderBy(v)
+}
+
+func (ec *executionContext) unmarshalOPostOrderBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx context.Context, v interface{}) (*pb.ListPostsReq_Filter_OrderBy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPostOrderBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPostOrderBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx context.Context, sel ast.SelectionSet, v *pb.ListPostsReq_Filter_OrderBy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOPostOrderBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_OrderBy(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOPostSortBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx context.Context, v interface{}) (pb.ListPostsReq_Filter_SortBy, error) {
+	return model.UnmarshalPostSortBy(v)
+}
+
+func (ec *executionContext) marshalOPostSortBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx context.Context, sel ast.SelectionSet, v pb.ListPostsReq_Filter_SortBy) graphql.Marshaler {
+	return model.MarshalPostSortBy(v)
+}
+
+func (ec *executionContext) unmarshalOPostSortBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx context.Context, v interface{}) (*pb.ListPostsReq_Filter_SortBy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPostSortBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPostSortBy2ᚖgithubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx context.Context, sel ast.SelectionSet, v *pb.ListPostsReq_Filter_SortBy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOPostSortBy2githubᚗcomᚋezio1119ᚋfishappᚑapiᚑgatewayᚋpbᚐListPostsReq_Filter_SortBy(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -8647,6 +9653,84 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, v interface{}) (timestamppb.Timestamp, error) {
+	return scalar.UnmarshalTimeProto(v)
+}
+
+func (ec *executionContext) marshalOTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v timestamppb.Timestamp) graphql.Marshaler {
+	return scalar.MarshalTimeProto(v)
+}
+
+func (ec *executionContext) unmarshalOTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, v interface{}) (*timestamppb.Timestamp, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTime2ᚖgoogleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v *timestamppb.Timestamp) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOTime2googleᚗgolangᚗorgᚋprotobufᚋtypesᚋknownᚋtimestamppbᚐTimestamp(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
+	return graphql.UnmarshalUpload(v)
+}
+
+func (ec *executionContext) marshalOUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	return graphql.MarshalUpload(v)
+}
+
+func (ec *executionContext) unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, v interface{}) ([]*graphql.Upload, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*graphql.Upload, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (*graphql.Upload, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v *graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

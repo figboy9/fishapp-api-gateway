@@ -2,14 +2,19 @@ sv:
   timeout: 2
   port: 8080
   debug: true
+  chunkdatasize: 1024
 api:
   post_url: post:50051
-  auth_url: auth:50051
-  profile_url: profile:50051
+  user_url: user:50051
   chat_url: chat:50051
+  image_url: image:50051
 graphql:
   playground: /graphql/playground
   endpoint: /graphql
 auth:
+  # dev key
   pub_jwtkey: "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEgKxyRRhwBXxK0bCfsY7Ut8eo/IL6\n37/qWpa41QEyObCGms1LnCZZ4YTIgVhglGWwMmERgZ+2294R0JfTiCYAnQ==\n-----END PUBLIC KEY-----"
-# dev key
+nats:
+  url: nats-streaming:4223
+  clusterid: fishapp-cluster
+  queuegroup: fishapp-api-gateway

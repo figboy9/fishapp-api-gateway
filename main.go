@@ -1,36 +1,72 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net/http"
-	"os"
-	"runtime/trace"
 
 	"github.com/ezio1119/fishapp-api-gateway/conf"
 	"github.com/ezio1119/fishapp-api-gateway/graph"
+	"github.com/ezio1119/fishapp-api-gateway/graph/dataloader"
+	graphMiddle "github.com/ezio1119/fishapp-api-gateway/graph/middleware"
 	"github.com/ezio1119/fishapp-api-gateway/infrastructure"
 	"github.com/ezio1119/fishapp-api-gateway/infrastructure/middleware"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	f, err := os.Create("trace.out")
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, conf.C.API.PostURL, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer f.Close()
+	defer conn.Close()
+	postC := pb.NewPostServiceClient(conn)
 
-	trace.Start(f)
-	defer trace.Stop()
-	middLe := middleware.InitMiddleware()
-	r := graph.NewResolver(infrastructure.NewGrpcClient())
-	srv, playground := infrastructure.NewGraphQLHandler(r, middLe)
-	if conf.C.Sv.Debug {
-		http.Handle(conf.C.Graphql.Playground, playground)
+	conn, err = grpc.DialContext(ctx, conf.C.API.UserURL, grpc.WithInsecure())
+	if err != nil {
+		panic(err)
 	}
-	http.Handle(conf.C.Graphql.Endpoint, middLe.GetTokenFromReq(srv))
-	http.HandleFunc("/healthy", func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprintln(w, "healthy")
-	})
+	defer conn.Close()
+	authC := pb.NewUserServiceClient(conn)
+
+	conn, err = grpc.DialContext(ctx, conf.C.API.ChatURL, grpc.WithInsecure())
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	chatC := pb.NewChatServiceClient(conn)
+
+	conn, err = grpc.DialContext(ctx, conf.C.API.ImageURL, grpc.WithInsecure())
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	imageC := pb.NewImageServiceClient(conn)
+
+	natsConn, err := infrastructure.NewNatsStreamingConn()
+	if err != nil {
+		panic(err)
+	}
+	defer natsConn.Close()
+
+	resolver := graph.NewResolver(postC, authC, chatC, imageC, natsConn)
+	gqlMW := graphMiddle.NewGraphQLMiddleware(chatC, postC)
+	gqlHandler := infrastructure.NewGraphQLHandler(resolver, gqlMW)
+
+	if conf.C.Sv.Debug {
+		http.Handle(conf.C.Graphql.Playground, infrastructure.NewPlayGroundHandler())
+	}
+
+	http.Handle(
+		conf.C.Graphql.Endpoint,
+		middleware.Cors(
+			middleware.GetTokenFromHeader(
+				dataloader.LoaderMiddleware(
+					gqlHandler,
+					postC,
+				))))
+
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }

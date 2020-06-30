@@ -3,77 +3,71 @@
 package model
 
 import (
-	"time"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/ezio1119/fishapp-api-gateway/pb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-type AddMemberChatRoomInput struct {
-	RoomID int64 `json:"roomId"`
-}
-
-type AddMemberChatRoomPayload struct {
-	Member *RoomMember `json:"member"`
-}
-
-type ApplyPost struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"userId"`
-	PostID    int64     `json:"postId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type ChatRoom struct {
-	ID        int64     `json:"id"`
-	PostID    int64     `json:"postId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
 
 type CreateApplyPostInput struct {
 	PostID int64 `json:"postId"`
 }
 
 type CreateApplyPostPayload struct {
-	ApplyPost *ApplyPost `json:"applyPost"`
+	ApplyPost *pb.ApplyPost `json:"applyPost"`
 }
 
-type CreateChatRoomInput struct {
-	PostID int64 `json:"postId"`
+type CreateMessageInput struct {
+	Body   *string         `json:"body"`
+	RoomID int64           `json:"roomId"`
+	Image  *graphql.Upload `json:"image"`
 }
 
-type CreateChatRoomPayload struct {
-	Room *ChatRoom `json:"room"`
+type CreateMessagePayload struct {
+	Message *pb.Message `json:"message"`
 }
 
 type CreatePostInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title             string                `json:"title"`
+	Content           string                `json:"content"`
+	FishingSpotTypeID int64                 `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64               `json:"fishTypeIds"`
+	PrefectureID      int64                 `json:"prefectureId"`
+	MeetingPlaceID    string                `json:"meetingPlaceId"`
+	MeetingAt         timestamppb.Timestamp `json:"meetingAt"`
+	MaxApply          int64                 `json:"maxApply"`
+	Images            []*graphql.Upload     `json:"images"`
 }
 
 type CreatePostPayload struct {
-	Post *Post `json:"post"`
+	Post   *pb.Post `json:"post"`
+	SagaID string   `json:"sagaId"`
 }
 
-type CreateProfileInput struct {
-	Name string `json:"name"`
+type CreatePostResultInput struct {
+	SagaID string `json:"sagaId"`
 }
 
-type CreateProfilePayload struct {
-	Profile *Profile `json:"profile"`
+type CreatePostResultPayload struct {
+	Post  *pb.Post `json:"post"`
+	Error *string  `json:"error"`
 }
 
 type CreateUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email        string          `json:"email"`
+	Password     string          `json:"password"`
+	Name         string          `json:"name"`
+	Sex          pb.Sex          `json:"sex"`
+	Introduction string          `json:"introduction"`
+	Image        *graphql.Upload `json:"image"`
 }
 
 type CreateUserPayload struct {
-	User      *User      `json:"user"`
-	TokenPair *TokenPair `json:"tokenPair"`
+	User      *pb.User      `json:"user"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
 }
 
 type DeleteApplyPostInput struct {
-	ApplyPostID int64 `json:"applyPostId"`
+	ID int64 `json:"id"`
 }
 
 type DeleteApplyPostPayload struct {
@@ -88,22 +82,14 @@ type DeletePostPayload struct {
 	Success bool `json:"success"`
 }
 
-type DeleteProfilePayload struct {
-	Success bool `json:"success"`
-}
-
-type DeleteUserPayload struct {
-	Success bool `json:"success"`
-}
-
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type LoginPayload struct {
-	User      *User      `json:"user"`
-	TokenPair *TokenPair `json:"tokenPair"`
+	User      *pb.User      `json:"user"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
 }
 
 type LogoutPayload struct {
@@ -111,11 +97,11 @@ type LogoutPayload struct {
 }
 
 type MessageAddedInput struct {
-	RoomIds []int64 `json:"roomIds"`
+	RoomID int64 `json:"roomId"`
 }
 
 type MessageAddedPayload struct {
-	Message *RoomMessage `json:"message"`
+	Message *pb.Message `json:"message"`
 }
 
 type PageInfo struct {
@@ -123,97 +109,61 @@ type PageInfo struct {
 	EndCursor   *string `json:"endCursor"`
 }
 
-type Post struct {
-	ID        int64     `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
 type PostConnection struct {
-	PageInfo *PageInfo `json:"pageInfo"`
-	Nodes    []*Post   `json:"nodes"`
+	PageInfo *PageInfo  `json:"pageInfo"`
+	Nodes    []*pb.Post `json:"nodes"`
 }
 
 type PostsInput struct {
-	NotImplement *string `json:"notImplement"`
-}
-
-type Profile struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	PrefectureID      *int64                          `json:"prefectureId"`
+	FishingSpotTypeID *int64                          `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64                         `json:"fishTypeIds"`
+	MeetingAtFrom     *timestamppb.Timestamp          `json:"meetingAtFrom"`
+	MeetingAtTo       *timestamppb.Timestamp          `json:"meetingAtTo"`
+	CanApply          *bool                           `json:"canApply"`
+	OrderBy           *pb.ListPostsReq_Filter_OrderBy `json:"orderBy"`
+	SortBy            *pb.ListPostsReq_Filter_SortBy  `json:"sortBy"`
+	UserID            *int64                          `json:"userId"`
 }
 
 type RefreshIDTokenPayload struct {
-	TokenPair *TokenPair `json:"tokenPair"`
+	TokenPair *pb.TokenPair `json:"tokenPair"`
 }
 
-type RoomMember struct {
-	ID        int64     `json:"id"`
-	RoomID    int64     `json:"roomId"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+type UpdatePasswordInput struct {
+	OldPassword string `json:"oldPassword"`
+	NewPassword string `json:"newPassword"`
 }
 
-type RoomMessage struct {
-	ID        int64     `json:"id"`
-	Body      string    `json:"body"`
-	RoomID    int64     `json:"roomId"`
-	UserID    int64     `json:"userId"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type SendMessageChatRoomInput struct {
-	Body   string `json:"body"`
-	RoomID int64  `json:"roomId"`
-}
-
-type SendMessageChatRoomPayload struct {
-	Message *RoomMessage `json:"message"`
-}
-
-type TokenPair struct {
-	IDToken      string `json:"idToken"`
-	RefreshToken string `json:"refreshToken"`
+type UpdatePasswordPayload struct {
+	Success bool `json:"success"`
 }
 
 type UpdatePostInput struct {
-	ID      int64  `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	ID                int64                 `json:"id"`
+	Title             string                `json:"title"`
+	Content           string                `json:"content"`
+	FishingSpotTypeID int64                 `json:"fishingSpotTypeId"`
+	FishTypeIds       []int64               `json:"fishTypeIds"`
+	PrefectureID      int64                 `json:"prefectureId"`
+	MeetingPlaceID    string                `json:"meetingPlaceId"`
+	MeetingAt         timestamppb.Timestamp `json:"meetingAt"`
+	MaxApply          int64                 `json:"maxApply"`
+	ImageIdsToDelete  []int64               `json:"imageIdsToDelete"`
+	Images            []*graphql.Upload     `json:"images"`
 }
 
 type UpdatePostPayload struct {
-	Post *Post `json:"post"`
-}
-
-type UpdateProfileInput struct {
-	Name string `json:"name"`
-}
-
-type UpdateProfilePayload struct {
-	Profile *Profile `json:"profile"`
+	Post *pb.Post `json:"post"`
 }
 
 type UpdateUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email        string          `json:"email"`
+	Name         string          `json:"name"`
+	Introduction string          `json:"introduction"`
+	Image        *graphql.Upload `json:"image"`
 }
 
 type UpdateUserPayload struct {
-	User *User `json:"user"`
-}
-
-type User struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	User *pb.User `json:"user"`
 }
