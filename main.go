@@ -71,6 +71,7 @@ func main() {
 
 	if !conf.C.Sv.Debug {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
 			io.WriteString(w, "api-gateway is healthy!")
 			log.Println("gcp load balancer health check is success")
 		})
