@@ -3,6 +3,7 @@ sv:
   port: 8080
   debug: true
   chunkdatasize: 1024
+  host: localhost
 api:
   post_url: post:50051
   user_url: user:50051
