@@ -44,5 +44,5 @@ func NewGraphQLHandler(r gen.ResolverRoot, gqlMW middleware.GraphQLMiddleware) *
 }
 
 func NewPlayGroundHandler() http.HandlerFunc {
-	return playground.Handler("GraphQL layground", conf.C.Sv.Host+conf.C.Graphql.URL)
+	return playground.Handler("GraphQL playground", conf.C.Graphql.URL)
 }
