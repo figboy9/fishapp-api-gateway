@@ -25,8 +25,9 @@ type config struct {
 		PubJwtkey string `mapstructure:"pub_jwtkey"`
 	}
 	Graphql struct {
-		Playground string
-		Endpoint   string
+		URL           string
+		Playground    bool
+		PlaygroundURL string
 	}
 	Nats struct {
 		URL        string
