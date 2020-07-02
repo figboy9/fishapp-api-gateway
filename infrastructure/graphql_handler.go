@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -43,6 +44,36 @@ func NewGraphQLHandler(r gen.ResolverRoot, gqlMW middleware.GraphQLMiddleware) *
 	return srv
 }
 
-func NewPlayGroundHandler() http.HandlerFunc {
-	return playground.Handler("GraphQL playground", conf.C.Graphql.URL)
+func NewPlayGroundHandler() http.Handler {
+	p := playground.Handler("GraphQL playground", conf.C.Graphql.URL)
+	if !conf.C.Sv.Debug {
+		return basicAuthMW(p)
+	}
+
+	return p
+}
+
+func basicAuthMW(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		if !ok || len(strings.TrimSpace(u)) < 1 || len(strings.TrimSpace(p)) < 1 {
+			unauthorised(w)
+			return
+		}
+
+		// This is a dummy check for credentials.
+		if u != conf.C.Graphql.Playground.User || p != conf.C.Graphql.Playground.Pass {
+			unauthorised(w)
+			return
+		}
+
+		// If required, Context could be updated to include authentication
+		// related data so that it could be used in consequent steps.
+		next.ServeHTTP(w, r)
+	})
+}
+
+func unauthorised(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+	w.WriteHeader(http.StatusUnauthorized)
 }
