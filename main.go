@@ -69,12 +69,10 @@ func main() {
 					postC,
 				))))
 
-	if !conf.C.Sv.Debug {
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, "api-gateway is healthy!")
-			log.Println("gcp load balancer health check is success")
-		})
-	}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "api-gateway is healthy!")
+		log.Println("gcp load balancer health check is success")
+	})
 
 	log.Fatal(http.ListenAndServe(":"+conf.C.Sv.Port, nil))
 }
