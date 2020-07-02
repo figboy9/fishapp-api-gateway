@@ -14,7 +14,6 @@ type config struct {
 		Port          string
 		Debug         bool
 		ChunkDataSize int
-		Host          string
 	}
 	API struct {
 		PostURL  string `mapstructure:"post_url"`
@@ -26,9 +25,13 @@ type config struct {
 		PubJwtkey string `mapstructure:"pub_jwtkey"`
 	}
 	Graphql struct {
-		URL           string
-		Playground    bool
-		PlaygroundURL string
+		URL        string
+		Playground struct {
+			Enable bool
+			URL    string
+			User   string
+			Pass   string
+		}
 	}
 	Nats struct {
 		URL        string

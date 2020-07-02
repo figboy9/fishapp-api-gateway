@@ -56,8 +56,8 @@ func main() {
 	gqlMW := graphMiddle.NewGraphQLMiddleware(chatC, postC)
 	gqlHandler := infrastructure.NewGraphQLHandler(resolver, gqlMW)
 
-	if conf.C.Graphql.Playground {
-		http.Handle(conf.C.Graphql.PlaygroundURL, infrastructure.NewPlayGroundHandler())
+	if conf.C.Graphql.Playground.Enable {
+		http.Handle(conf.C.Graphql.Playground.URL, infrastructure.NewPlayGroundHandler())
 	}
 
 	http.Handle(
