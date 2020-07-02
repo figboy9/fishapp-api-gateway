@@ -14,6 +14,7 @@ type config struct {
 		Port          string
 		Debug         bool
 		ChunkDataSize int
+		Host          string
 	}
 	API struct {
 		PostURL  string `mapstructure:"post_url"`
