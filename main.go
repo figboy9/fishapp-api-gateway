@@ -56,12 +56,12 @@ func main() {
 	gqlMW := graphMiddle.NewGraphQLMiddleware(chatC, postC)
 	gqlHandler := infrastructure.NewGraphQLHandler(resolver, gqlMW)
 
-	if conf.C.Sv.Debug {
-		http.Handle(conf.C.Graphql.Playground, infrastructure.NewPlayGroundHandler())
+	if conf.C.Graphql.Playground {
+		http.Handle(conf.C.Graphql.PlaygroundURL, infrastructure.NewPlayGroundHandler())
 	}
 
 	http.Handle(
-		conf.C.Graphql.Endpoint,
+		conf.C.Graphql.URL,
 		middleware.Cors(
 			middleware.GetTokenFromHeader(
 				dataloader.LoaderMiddleware(
